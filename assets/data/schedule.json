@@ -1,0 +1,646 @@
+{
+  "updatedAt": "2026-11-03T16:19:04.570Z",
+  "dayOrder": [
+    "จันทร์",
+    "อังคาร",
+    "พุธ",
+    "พฤหัสบดี",
+    "ศุกร์"
+  ],
+  "schedule": {
+    "จันทร์": {
+      "name": "วันจันทร์",
+      "en": "Monday",
+      "colorClass": "bg-yellow-50 text-yellow-900 border-yellow-200",
+      "activeTabClass": "bg-yellow-400 text-yellow-950 shadow-sm border-yellow-500",
+      "badgeClass": "bg-yellow-100 text-yellow-800 border-yellow-300",
+      "items": [
+        {
+          "type": "subject",
+          "period": "คาบที่ 1 (08.20 - 09.10 น.)",
+          "code": "ว33103",
+          "name": "ชีวะ",
+          "teacher": "ครูนริลญา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 2 (09.10 - 10.00 น.)",
+          "code": "อ33202",
+          "name": "ภาษาอังกฤษอ่าน-เขียน",
+          "teacher": "ครูปิยะวัฒน์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พัก 20 นาที",
+          "time": "10.00 - 10.20 น.",
+          "icon": "🧃",
+          "color": "purple"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 3 - 4 (10.20 - 12.00 น.)",
+          "code": "ว33286",
+          "name": "วิชาคอมพิวเตอร์",
+          "teacher": "ครูพิมพ์ระวี",
+          "room": "ห้องคอม 6",
+          "isDouble": true
+        },
+        {
+          "type": "break",
+          "title": "พักกลางวัน 50 นาที",
+          "time": "12.00 - 12.50 น.",
+          "icon": "🍱",
+          "color": "rose"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 5 (12.50 - 13.40 น.)",
+          "code": "ค33106",
+          "name": "คณิตศาสตร์พื้นฐาน",
+          "teacher": "ครูจินตนา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 6 (13.40 - 14.30 น.)",
+          "code": "อ33102",
+          "name": "ภาษาอังกฤษพื้นฐาน",
+          "teacher": "ครูรัชนีกร",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 7 (14.30 - 15.20 น.)",
+          "code": "ว33102",
+          "name": "เคมี",
+          "teacher": "ครูสุธีรา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "activity",
+          "period": "คาบที่ 8 (15.20 - 16.10 น.)",
+          "code": "กิจกรรม",
+          "name": "อบรมคุณธรรม",
+          "teacher": "-",
+          "room": "ตามกำหนดการโรงเรียน"
+        }
+      ]
+    },
+    "อังคาร": {
+      "name": "วันอังคาร",
+      "en": "Tuesday",
+      "colorClass": "bg-pink-50 text-pink-900 border-pink-200",
+      "activeTabClass": "bg-pink-400 text-pink-950 shadow-sm border-pink-500",
+      "badgeClass": "bg-pink-100 text-pink-800 border-pink-300",
+      "items": [
+        {
+          "type": "subject",
+          "period": "คาบที่ 1 (08.20 - 09.10 น.)",
+          "code": "ส33102",
+          "name": "สังคมศึกษาพื้นฐาน",
+          "teacher": "ครูอิษฎาภรณ์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 2 (09.10 - 10.00 น.)",
+          "code": "ศ33102",
+          "name": "ดนตรี นาฏศิลป์",
+          "teacher": "ครูวสันต์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พัก 20 นาที",
+          "time": "10.00 - 10.20 น.",
+          "icon": "🧃",
+          "color": "purple"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 3 (10.20 - 11.10 น.)",
+          "code": "อ33102",
+          "name": "ภาษาอังกฤษพื้นฐาน",
+          "teacher": "ครูรัชนีกร",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 4 (11.10 - 12.00 น.)",
+          "code": "ค33206",
+          "name": "คณิตศาสตร์เพิ่มเติม",
+          "teacher": "ครูนพพล",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พักกลางวัน 50 นาที",
+          "time": "12.00 - 12.50 น.",
+          "icon": "🍱",
+          "color": "rose"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 5 - 6 (12.50 - 14.30 น.)",
+          "code": "ว33103",
+          "name": "ชีวะ",
+          "teacher": "ครูนริลญา",
+          "room": "ห้อง Lab 327",
+          "isDouble": true
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 7 (14.30 - 15.20 น.)",
+          "code": "ส33206",
+          "name": "สังคมศึกษาเพิ่มเติม",
+          "teacher": "ครูศุวัชรกัณต์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "free",
+          "period": "คาบที่ 8 (15.20 - 16.10 น.)",
+          "code": "-",
+          "name": "คาบอิสระ",
+          "teacher": "-",
+          "room": "ตามอัธยาศัย"
+        }
+      ]
+    },
+    "พุธ": {
+      "name": "วันพุธ",
+      "en": "Wednesday",
+      "colorClass": "bg-emerald-50 text-emerald-900 border-emerald-200",
+      "activeTabClass": "bg-emerald-400 text-emerald-950 shadow-sm border-emerald-500",
+      "badgeClass": "bg-emerald-100 text-emerald-800 border-emerald-300",
+      "items": [
+        {
+          "type": "subject",
+          "period": "คาบที่ 1 - 2 (08.20 - 10.00 น.)",
+          "code": "ว33101",
+          "name": "ฟิสิกส์",
+          "teacher": "ครูมนตรี",
+          "room": "ห้องเรียนปกติ",
+          "isDouble": true
+        },
+        {
+          "type": "break",
+          "title": "พัก 20 นาที",
+          "time": "10.00 - 10.20 น.",
+          "icon": "🧃",
+          "color": "purple"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 3 - 4 (10.20 - 12.00 น.)",
+          "code": "ง33101",
+          "name": "การงานอาชีพพื้นฐาน",
+          "teacher": "ระบุว่า ครูย้าย",
+          "room": "ห้องเรียนปกติ",
+          "isDouble": true
+        },
+        {
+          "type": "break",
+          "title": "พักกลางวัน 50 นาที",
+          "time": "12.00 - 12.50 น.",
+          "icon": "🍱",
+          "color": "rose"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 5 (12.50 - 13.40 น.)",
+          "code": "ส33102",
+          "name": "สังคมศึกษาพื้นฐาน",
+          "teacher": "ครูอิษฎาภรณ์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 6 (13.40 - 14.30 น.)",
+          "code": "อ33202",
+          "name": "ภาษาอังกฤษอ่าน-เขียน",
+          "teacher": "ครูปิยะวัฒน์",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 7 (14.30 - 15.20 น.)",
+          "code": "ค33206",
+          "name": "คณิตศาสตร์เพิ่มเติม",
+          "teacher": "ครูนพพล",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "activity",
+          "period": "คาบที่ 8 (15.20 - 16.10 น.)",
+          "code": "กิจกรรม",
+          "name": "โฮมรูม",
+          "teacher": "-",
+          "room": "ห้องเรียนประจำ"
+        }
+      ]
+    },
+    "พฤหัสบดี": {
+      "name": "วันพฤหัสบดี",
+      "en": "Thursday",
+      "colorClass": "bg-orange-50 text-orange-900 border-orange-200",
+      "activeTabClass": "bg-orange-400 text-orange-950 shadow-sm border-orange-500",
+      "badgeClass": "bg-orange-100 text-orange-800 border-orange-300",
+      "items": [
+        {
+          "type": "subject",
+          "period": "คาบที่ 1 (08.20 - 09.10 น.)",
+          "code": "ว33101",
+          "name": "ฟิสิกส์",
+          "teacher": "ครูมนตรี",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 2 (09.10 - 10.00 น.)",
+          "code": "ค33206",
+          "name": "คณิตศาสตร์เพิ่มเติม",
+          "teacher": "ครูนพพล",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พัก 20 นาที",
+          "time": "10.00 - 10.20 น.",
+          "icon": "🧃",
+          "color": "purple"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 3 (10.20 - 11.10 น.)",
+          "code": "ส33202",
+          "name": "สังคมศึกษาเพิ่มเติม",
+          "teacher": "ครูวาสนา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 4 (11.10 - 12.00 น.)",
+          "code": "พ33102",
+          "name": "สุขศึกษาและพลศึกษา",
+          "teacher": "ครูภานุวัฒน์",
+          "room": "ห้องเรียนปกติ / สนาม"
+        },
+        {
+          "type": "break",
+          "title": "พักกลางวัน 50 นาที",
+          "time": "12.00 - 12.50 น.",
+          "icon": "🍱",
+          "color": "rose"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 5 - 6 (12.50 - 14.30 น.)",
+          "code": "ว33102",
+          "name": "เคมี",
+          "teacher": "ครูสุธีรา",
+          "room": "ห้อง Lab 325",
+          "isDouble": true
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 7 (14.30 - 15.20 น.)",
+          "code": "ท33102",
+          "name": "ภาษาไทยพื้นฐาน",
+          "teacher": "ครูจินตนา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "activity",
+          "period": "คาบที่ 8 (15.20 - 16.10 น.)",
+          "code": "กิจกรรมพัฒนาผู้เรียน",
+          "name": "แนะแนว",
+          "teacher": "ครูจิรภัทร์",
+          "room": "ห้องเรียนปกติ"
+        }
+      ]
+    },
+    "ศุกร์": {
+      "name": "วันศุกร์",
+      "en": "Friday",
+      "colorClass": "bg-sky-50 text-sky-900 border-sky-200",
+      "activeTabClass": "bg-sky-400 text-sky-950 shadow-sm border-sky-500",
+      "badgeClass": "bg-sky-100 text-sky-800 border-sky-300",
+      "items": [
+        {
+          "type": "subject",
+          "period": "คาบที่ 1 (08.20 - 09.10 น.)",
+          "code": "ค33106",
+          "name": "คณิตศาสตร์พื้นฐาน",
+          "teacher": "ครูจินตนา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 2 (09.10 - 10.00 น.)",
+          "code": "ท33102",
+          "name": "ภาษาไทยพื้นฐาน",
+          "teacher": "ครูจินตนา",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พัก 20 นาที",
+          "time": "10.00 - 10.20 น.",
+          "icon": "🧃",
+          "color": "purple"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 3 (10.20 - 11.10 น.)",
+          "code": "ว33101",
+          "name": "ฟิสิกส์",
+          "teacher": "ครูมนตรี",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "subject",
+          "period": "คาบที่ 4 (11.10 - 12.00 น.)",
+          "code": "ค33206",
+          "name": "คณิตศาสตร์เพิ่มเติม",
+          "teacher": "ครูนพพล",
+          "room": "ห้องเรียนปกติ"
+        },
+        {
+          "type": "break",
+          "title": "พักกลางวัน 50 นาที",
+          "time": "12.00 - 12.50 น.",
+          "icon": "🍱",
+          "color": "rose"
+        },
+        {
+          "type": "activity",
+          "period": "คาบที่ 5 (12.50 - 13.40 น.)",
+          "code": "กิจกรรมพัฒนาผู้เรียน",
+          "name": "กิจกรรมชุมนุม",
+          "teacher": "-",
+          "room": "ตามชุมนุมที่ลงทะเบียน"
+        },
+        {
+          "type": "free",
+          "period": "คาบที่ 6 - 8 (13.40 - 16.10 น.)",
+          "code": "-",
+          "name": "คาบอิสระ (3 คาบ)",
+          "teacher": "-",
+          "room": "ตามอัธยาศัย"
+        }
+      ]
+    }
+  },
+  "bellPlans": {
+    "plan1": {
+      "id": "plan1",
+      "name": "แผนที่ 1: เวลาเรียนปกติ",
+      "shortName": "แผน 1 ปกติ",
+      "desc": "คาบละ 50 นาที (08.20 - 16.10 น.)",
+      "periods": {
+        "1": {
+          "start": 500,
+          "end": 550,
+          "timeStr": "08.20 - 09.10 น."
+        },
+        "2": {
+          "start": 550,
+          "end": 600,
+          "timeStr": "09.10 - 10.00 น."
+        },
+        "3": {
+          "start": 620,
+          "end": 670,
+          "timeStr": "10.20 - 11.10 น."
+        },
+        "4": {
+          "start": 670,
+          "end": 720,
+          "timeStr": "11.10 - 12.00 น."
+        },
+        "5": {
+          "start": 770,
+          "end": 820,
+          "timeStr": "12.50 - 13.40 น."
+        },
+        "6": {
+          "start": 820,
+          "end": 870,
+          "timeStr": "13.40 - 14.30 น."
+        },
+        "7": {
+          "start": 870,
+          "end": 920,
+          "timeStr": "14.30 - 15.20 น."
+        },
+        "8": {
+          "start": 920,
+          "end": 970,
+          "timeStr": "15.20 - 16.10 น."
+        },
+        "break1": {
+          "start": 600,
+          "end": 620,
+          "timeStr": "10.00 - 10.20 น.",
+          "title": "พัก 20 นาที",
+          "icon": "🧃"
+        },
+        "lunch": {
+          "start": 720,
+          "end": 770,
+          "timeStr": "12.00 - 12.50 น.",
+          "title": "พักกลางวัน 50 นาที",
+          "icon": "🍱"
+        }
+      }
+    },
+    "plan2": {
+      "id": "plan2",
+      "name": "แผนที่ 2: ประชุมหลังเลิกเรียน",
+      "shortName": "แผน 2 ประชุมท้ายวัน",
+      "desc": "คาบละ 45 นาที / เลิกเรียน 15.10 น.",
+      "periods": {
+        "1": {
+          "start": 480,
+          "end": 525,
+          "timeStr": "08.00 - 08.45 น."
+        },
+        "2": {
+          "start": 525,
+          "end": 570,
+          "timeStr": "08.45 - 09.30 น."
+        },
+        "3": {
+          "start": 590,
+          "end": 635,
+          "timeStr": "09.50 - 10.35 น."
+        },
+        "4": {
+          "start": 635,
+          "end": 680,
+          "timeStr": "10.35 - 11.20 น."
+        },
+        "5": {
+          "start": 730,
+          "end": 775,
+          "timeStr": "12.10 - 12.55 น."
+        },
+        "6": {
+          "start": 775,
+          "end": 820,
+          "timeStr": "12.55 - 13.40 น."
+        },
+        "7": {
+          "start": 820,
+          "end": 865,
+          "timeStr": "13.40 - 14.25 น."
+        },
+        "8": {
+          "start": 865,
+          "end": 910,
+          "timeStr": "14.25 - 15.10 น."
+        },
+        "break1": {
+          "start": 570,
+          "end": 590,
+          "timeStr": "09.30 - 09.50 น.",
+          "title": "พัก 20 นาที",
+          "icon": "🧃"
+        },
+        "lunch": {
+          "start": 680,
+          "end": 730,
+          "timeStr": "11.20 - 12.10 น.",
+          "title": "พักกลางวัน 50 นาที",
+          "icon": "🍱"
+        }
+      }
+    },
+    "plan3": {
+      "id": "plan3",
+      "name": "แผนที่ 3: ประชุมหลังประกอบพิธี",
+      "shortName": "แผน 3 ประชุมเช้า",
+      "desc": "เริ่มเรียนคาบ 1 ตอน 08.45 น.",
+      "periods": {
+        "1": {
+          "start": 525,
+          "end": 570,
+          "timeStr": "08.45 - 09.30 น."
+        },
+        "2": {
+          "start": 570,
+          "end": 615,
+          "timeStr": "09.30 - 10.15 น."
+        },
+        "3": {
+          "start": 635,
+          "end": 680,
+          "timeStr": "10.35 - 11.20 น."
+        },
+        "4": {
+          "start": 680,
+          "end": 725,
+          "timeStr": "11.20 - 12.05 น."
+        },
+        "5": {
+          "start": 775,
+          "end": 820,
+          "timeStr": "12.55 - 13.40 น."
+        },
+        "6": {
+          "start": 820,
+          "end": 865,
+          "timeStr": "13.40 - 14.25 น."
+        },
+        "7": {
+          "start": 865,
+          "end": 910,
+          "timeStr": "14.25 - 15.10 น."
+        },
+        "8": {
+          "start": 910,
+          "end": 960,
+          "timeStr": "15.10 - 16.00 น."
+        },
+        "break1": {
+          "start": 615,
+          "end": 635,
+          "timeStr": "10.15 - 10.35 น.",
+          "title": "พัก 20 นาที",
+          "icon": "🧃"
+        },
+        "lunch": {
+          "start": 725,
+          "end": 775,
+          "timeStr": "12.05 - 12.55 น.",
+          "title": "พักกลางวัน 50 นาที",
+          "icon": "🍱"
+        }
+      }
+    },
+    "plan4": {
+      "id": "plan4",
+      "name": "แผนที่ 4: กิจกรรมช่วงพักเที่ยง",
+      "shortName": "แผน 4 พักเที่ยงยาว",
+      "desc": "พักเที่ยง 1 ชม. 50 นาที (11.20 - 13.10 น.)",
+      "periods": {
+        "1": {
+          "start": 480,
+          "end": 525,
+          "timeStr": "08.00 - 08.45 น."
+        },
+        "2": {
+          "start": 525,
+          "end": 570,
+          "timeStr": "08.45 - 09.30 น."
+        },
+        "3": {
+          "start": 590,
+          "end": 635,
+          "timeStr": "09.50 - 10.35 น."
+        },
+        "4": {
+          "start": 635,
+          "end": 680,
+          "timeStr": "10.35 - 11.20 น."
+        },
+        "5": {
+          "start": 790,
+          "end": 835,
+          "timeStr": "13.10 - 13.55 น."
+        },
+        "6": {
+          "start": 835,
+          "end": 880,
+          "timeStr": "13.55 - 14.40 น."
+        },
+        "7": {
+          "start": 880,
+          "end": 925,
+          "timeStr": "14.40 - 15.25 น."
+        },
+        "8": {
+          "start": 925,
+          "end": 970,
+          "timeStr": "15.25 - 16.10 น."
+        },
+        "break1": {
+          "start": 570,
+          "end": 590,
+          "timeStr": "09.30 - 09.50 น.",
+          "title": "พัก 20 นาที",
+          "icon": "🧃"
+        },
+        "lunch": {
+          "start": 680,
+          "end": 790,
+          "timeStr": "11.20 - 13.10 น.",
+          "title": "พักเที่ยง/กิจกรรม",
+          "icon": "🍱"
+        }
+      }
+    }
+  }
+}
