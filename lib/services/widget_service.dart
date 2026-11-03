@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 
 class WidgetService {
@@ -6,7 +7,10 @@ class WidgetService {
   static const String iOSWidgetName = 'Tarang69Widget';
 
   static Future<void> init() async {
-    await HomeWidget.setAppGroupId(appGroupId);
+    if (kIsWeb) return;
+    try {
+      await HomeWidget.setAppGroupId(appGroupId);
+    } catch (_) {}
   }
 
   static Future<void> updateWidgetData({
@@ -19,6 +23,7 @@ class WidgetService {
     required String dayName,
     required int progressPercent,
   }) async {
+    if (kIsWeb) return;
     try {
       await HomeWidget.saveWidgetData<String>('subject_name', subjectName);
       await HomeWidget.saveWidgetData<String>('subject_room', subjectRoom);
@@ -33,8 +38,6 @@ class WidgetService {
         androidName: androidWidgetName,
         iOSName: iOSWidgetName,
       );
-    } catch (e) {
-      // Safely ignore when running in environments without widget support
-    }
+    } catch (_) {}
   }
 }

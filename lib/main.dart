@@ -5,7 +5,9 @@ import 'services/widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await WidgetService.init();
+  try {
+    await WidgetService.init();
+  } catch (_) {}
 
   final scheduleService = ScheduleService();
   runApp(Tarang69App(scheduleService: scheduleService));
