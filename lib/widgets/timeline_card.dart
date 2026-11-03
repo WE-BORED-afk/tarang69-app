@@ -126,7 +126,7 @@ class TimelineCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: isSpecialRoom ? Colors.pink.shade50 : Colors.slate.shade100,
+                          color: isSpecialRoom ? Colors.pink.shade50 : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: isSpecialRoom ? Colors.pink.shade200 : Colors.grey.shade200,

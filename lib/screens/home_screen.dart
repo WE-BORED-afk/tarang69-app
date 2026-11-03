@@ -278,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: MaterialStateProperty.all(const Color(0xFFF1F5F9)),
+          headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
           columns: const [
             DataColumn(label: Text('วัน', style: TextStyle(fontWeight: FontWeight.bold))),
             DataColumn(label: Text('คาบ 1')),
