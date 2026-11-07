@@ -1,16 +1,24 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'services/schedule_service.dart';
 import 'services/widget_service.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await WidgetService.init();
-  } catch (_) {}
 
+  // Run app immediately so Android never stays on the white splash screen
   final scheduleService = ScheduleService();
   runApp(Tarang69App(scheduleService: scheduleService));
+
+  // Initialize widget service in background safely
+  scheduleMicrotask(() async {
+    try {
+      await WidgetService.init();
+    } catch (e) {
+      debugPrint('WidgetService init error: $e');
+    }
+  });
 }
 
 class Tarang69App extends StatelessWidget {
@@ -30,7 +38,6 @@ class Tarang69App extends StatelessWidget {
           primary: const Color(0xFF4F46E5),
           surface: const Color(0xFFF8FAFC),
         ),
-        fontFamily: 'Kanit',
       ),
       home: HomeScreen(scheduleService: scheduleService),
     );
