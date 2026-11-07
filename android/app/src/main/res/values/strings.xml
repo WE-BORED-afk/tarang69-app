@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TARANG69</string>
+    <string name="widget_name">ตารางเรียน ม.6/9</string>
+    <string name="widget_description">วิดเจ็ตแสดงคาบเรียนปัจจุบัน คาบถัดไป และห้องเรียนแบบเรียลไทม์</string>
+</resources>
