@@ -22,9 +22,18 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = "tarang69"
+            keyPassword = "tarang69key"
+            storeFile = file("upload-keystore.jks")
+            storePassword = "tarang69key"
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }

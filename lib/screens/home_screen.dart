@@ -193,25 +193,26 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          // Right Actions (View switch + Refresh + Simulator) - NO duplicate plan selector here!
+          // Right Actions (View switch + Hidden Simulator) - NO duplicate plan selector here!
           Row(
             children: [
-              // Simulator toggle button
-              IconButton(
-                icon: Icon(
-                  showSimulator ? Icons.timer_rounded : Icons.timer_outlined,
-                  size: 20,
-                  color: showSimulator ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
+              // Simulator toggle button (ซ่อนไว้ตามคำขอ แต่คงโค้ดไว้เปิดใช้งานได้เมื่อต้องการ)
+              if (false)
+                IconButton(
+                  icon: Icon(
+                    showSimulator ? Icons.timer_rounded : Icons.timer_outlined,
+                    size: 20,
+                    color: showSimulator ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
+                  ),
+                  tooltip: 'จำลองเวลา',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    setState(() {
+                      showSimulator = !showSimulator;
+                    });
+                  },
                 ),
-                tooltip: 'จำลองเวลา',
-                visualDensity: VisualDensity.compact,
-                onPressed: () {
-                  setState(() {
-                    showSimulator = !showSimulator;
-                  });
-                },
-              ),
-              // View switch pill (📊 ตารางรวม / 📱 รายวัน)
+              // View switch pill (เฉพาะไอคอน 📱 รายวัน / 📊 ตารางรวม ตามสไตล์มือถือ)
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFE2E8F0),
@@ -224,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => setState(() => isTableView = false),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: !isTableView ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
@@ -232,48 +233,22 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2)]
                               : null,
                         ),
-                        child: Row(
-                          children: [
-                            const Text('📱', style: TextStyle(fontSize: 11)),
-                            const SizedBox(width: 3),
-                            Text(
-                              'รายวัน',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: !isTableView ? const Color(0xFF4338CA) : const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: const Text('📱', style: TextStyle(fontSize: 13)),
                       ),
                     ),
                     InkWell(
                       onTap: () => setState(() => isTableView = true),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: isTableView ? const Color(0xFF4F46E5) : Colors.transparent,
+                          color: isTableView ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: isTableView
                               ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 2)]
                               : null,
                         ),
-                        child: Row(
-                          children: [
-                            const Text('📊', style: TextStyle(fontSize: 11)),
-                            const SizedBox(width: 3),
-                            Text(
-                              'ตารางรวม',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isTableView ? Colors.white : const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: const Text('📊', style: TextStyle(fontSize: 13)),
                       ),
                     ),
                   ],
