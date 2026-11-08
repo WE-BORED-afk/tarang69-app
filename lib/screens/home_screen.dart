@@ -635,8 +635,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(sub.name ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                              if (sub.room != null)
-                                Text(sub.room!, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10)),
                             ],
                           ),
                         );

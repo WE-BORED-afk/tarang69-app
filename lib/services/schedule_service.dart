@@ -415,8 +415,7 @@ class ScheduleService {
           final nextTime = itemsWithTime[i + 1]['time'] as ItemTimeRange;
           final nextTimeStart = nextTime.timeStr.split(' - ')[0];
           final nextTitle = nextItem.name ?? nextItem.title ?? '';
-          final nextRoom = nextItem.room != null && nextItem.room != '-' ? ' (${nextItem.room})' : '';
-          nextSub = '$nextTitle $nextRoom ($nextTimeStart น.)';
+          nextSub = '$nextTitle ($nextTimeStart น.)';
         }
 
         String laterSub = '';

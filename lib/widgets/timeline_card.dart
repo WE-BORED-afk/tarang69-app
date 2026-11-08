@@ -65,9 +65,6 @@ class TimelineCard extends StatelessWidget {
     }
 
     // 2. Regular Period Card
-    final isSpecialRoom = item.room != null &&
-        (item.room!.contains('Lab') || item.room!.contains('คอม') || item.room!.contains('ศูนย์'));
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(14),
@@ -161,37 +158,13 @@ class TimelineCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (item.room != null && item.room!.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: isSpecialRoom ? const Color(0xFFFDF2F8) : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSpecialRoom ? const Color(0xFFF9A8D4) : const Color(0xFFE2E8F0),
-                          ),
-                        ),
-                        child: Text(
-                          '📍 ${item.room!}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: isSpecialRoom ? const Color(0xFF9D174D) : const Color(0xFF334155),
-                          ),
-                        ),
-                      ),
-                    if (item.teacher != null && item.teacher != '-')
-                      Text(
-                        '👨‍🏫 ${item.teacher!}',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      ),
-                  ],
-                ),
+                if (item.teacher != null && item.teacher != '-') ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    '👨‍🏫 ${item.teacher!}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                ],
               ],
             ),
           ),

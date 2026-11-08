@@ -28,7 +28,7 @@ class Tarang69WidgetProvider : HomeWidgetProvider() {
                 val later = widgetData.getString("later_subject", "") ?: ""
 
                 setTextViewText(R.id.widget_subject_name, subject)
-                setTextViewText(R.id.widget_subject_room, "📍 $room")
+                setViewVisibility(R.id.widget_subject_room, View.GONE)
                 setTextViewText(R.id.widget_subject_time, time)
                 setTextViewText(R.id.widget_status_badge, "• $status")
                 setTextViewText(R.id.widget_next_subject, "คาบถัดไป: $next")
