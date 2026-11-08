@@ -496,10 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final item = entry.value;
           String timeStr = '';
           if (plan != null) {
-            final periodKey = (idx + 1).toString();
-            if (plan.periods.containsKey(periodKey)) {
-              timeStr = plan.periods[periodKey]!.timeStr;
-            }
+            timeStr = widget.scheduleService.getItemTimeRange(item, plan).timeStr;
           }
 
           final isActive = isToday && idx == status.activePeriodIndex;

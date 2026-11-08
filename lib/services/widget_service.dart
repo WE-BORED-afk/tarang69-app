@@ -22,6 +22,8 @@ class WidgetService {
     required String nextSubject,
     required String dayName,
     required int progressPercent,
+    String? countdownText,
+    String? laterSubject,
   }) async {
     if (kIsWeb) return;
     try {
@@ -33,6 +35,12 @@ class WidgetService {
       await HomeWidget.saveWidgetData<String>('next_subject', nextSubject);
       await HomeWidget.saveWidgetData<String>('day_name', dayName);
       await HomeWidget.saveWidgetData<int>('progress_percent', progressPercent);
+      if (countdownText != null) {
+        await HomeWidget.saveWidgetData<String>('countdown_text', countdownText);
+      }
+      if (laterSubject != null) {
+        await HomeWidget.saveWidgetData<String>('later_subject', laterSubject);
+      }
 
       await HomeWidget.updateWidget(
         name: androidWidgetName,

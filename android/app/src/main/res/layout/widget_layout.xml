@@ -4,24 +4,85 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp"
     android:background="@drawable/widget_background">
 
-    <!-- Top Status Header -->
+    <!-- Row 1: Primary Compact Row (Fits in 3x1 single row) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Subject Name -->
+        <TextView
+            android:id="@+id/widget_subject_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TARANG69"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#0F172A"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- Room badge -->
+        <TextView
+            android:id="@+id/widget_subject_room"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/widget_room_badge"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:text="📍 ห้องเรียน"
+            android:textSize="10sp"
+            android:textColor="#4338CA"
+            android:textStyle="bold"
+            android:maxLines="1" />
+
+        <!-- Countdown / Time Remaining (Highlighted Pill) -->
+        <TextView
+            android:id="@+id/widget_countdown_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/widget_countdown_pill"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="⏱ อีก 15 น."
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Sub-info: Time and Status -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_subject_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="08.20 - 09.10 น."
+            android:textSize="10sp"
+            android:textColor="#64748B" />
+
         <TextView
             android:id="@+id/widget_status_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🟢 กำลังเรียน"
-            android:textSize="12sp"
+            android:layout_marginStart="6dp"
+            android:text="• กำลังเรียน"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:textColor="#A7F3D0" />
+            android:textColor="#059669" />
 
         <TextView
             android:id="@+id/widget_day_name"
@@ -30,26 +91,42 @@
             android:layout_weight="1"
             android:gravity="end"
             android:text="ม.6/9"
-            android:textSize="12sp"
-            android:textColor="#E0E7FF"
+            android:textSize="10sp"
+            android:textColor="#94A3B8"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Subject Name -->
-    <TextView
-        android:id="@+id/widget_subject_name"
+    <!-- Row 2: Next Subject / Next Break (Visible when expanded vertically) -->
+    <LinearLayout
+        android:id="@+id/widget_expand_section_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="วิชาที่กำลังเรียน"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:paddingTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <!-- Room and Time -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="➡️ "
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widget_next_subject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="คาบถัดไป: ..."
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#334155"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <!-- Row 3: Later Subject / Break (Visible when expanded taller) -->
     <LinearLayout
+        android:id="@+id/widget_expand_section_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -57,37 +134,20 @@
         android:gravity="center_vertical">
 
         <TextView
-            android:id="@+id/widget_subject_room"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#33FFFFFF"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:text="📍 ห้องเรียน"
-            android:textSize="11sp"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold" />
+            android:text="⏳ "
+            android:textSize="11sp" />
 
         <TextView
-            android:id="@+id/widget_subject_time"
-            android:layout_width="wrap_content"
+            android:id="@+id/widget_later_subject"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="08.20 - 09.10 น."
+            android:text="ต่อไปอีก: ..."
             android:textSize="11sp"
-            android:textColor="#C7D2FE" />
+            android:textColor="#64748B"
+            android:maxLines="1"
+            android:ellipsize="end" />
     </LinearLayout>
-
-    <!-- Next Subject Footer -->
-    <TextView
-        android:id="@+id/widget_next_subject"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="คาบถัดไป: ..."
-        android:textSize="11sp"
-        android:textColor="#E0E7FF"
-        android:maxLines="1"
-        android:ellipsize="end" />
 
 </LinearLayout>

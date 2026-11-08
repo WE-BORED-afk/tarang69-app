@@ -1,7 +1,7 @@
 name: tarang69
 description: "TARANG69 - ตารางเรียนอัจฉริยะ ม.6/9 พร้อม Home Screen Widget สำหรับ Android & iOS"
 publish_to: 'none'
-version: 1.0.9+9
+version: 1.0.10+10
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

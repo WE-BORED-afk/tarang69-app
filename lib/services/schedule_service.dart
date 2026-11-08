@@ -13,9 +13,11 @@ class CurrentPeriodStatus {
   final String teacher;
   final String badge;
   final String nextSubject;
+  final String laterSubject;
   final int progressPercent;
   final int activePeriodIndex;
   final int remainingSeconds;
+  final String countdownText;
   final bool isWeekend;
   final bool isBeforeSchool;
   final bool isAfterSchool;
@@ -28,14 +30,24 @@ class CurrentPeriodStatus {
     required this.teacher,
     required this.badge,
     required this.nextSubject,
+    this.laterSubject = '',
     required this.progressPercent,
     required this.activePeriodIndex,
     this.remainingSeconds = 0,
+    this.countdownText = '',
     this.isWeekend = false,
     this.isBeforeSchool = false,
     this.isAfterSchool = false,
     this.code,
   });
+}
+
+class ItemTimeRange {
+  final int start;
+  final int end;
+  final String timeStr;
+
+  ItemTimeRange({required this.start, required this.end, required this.timeStr});
 }
 
 class ScheduleService {
@@ -85,8 +97,6 @@ class ScheduleService {
     }
   }
 
-  /// Returns the day key (e.g. 'จันทร์') ONLY if today is a weekday Monday-Friday.
-  /// On weekends, returns null to avoid marking Monday as 'Today'.
   String? getActualTodayThaiKey() {
     final weekday = DateTime.now().weekday;
     switch (weekday) {
@@ -101,13 +111,58 @@ class ScheduleService {
       case 5:
         return 'ศุกร์';
       default:
-        return null; // Saturday or Sunday
+        return null;
     }
   }
 
-  /// Default selected tab when opening the app (if weekend, preview 'จันทร์')
   String getDefaultViewDayKey() {
     return getActualTodayThaiKey() ?? 'จันทร์';
+  }
+
+  ItemTimeRange getItemTimeRange(PeriodItem item, BellPlan plan) {
+    if (item.type == 'break') {
+      final title = item.title ?? '';
+      if (title.contains('20') || title.contains('สาย') || title.contains('เช้า')) {
+        final b1 = plan.periods['break1'];
+        if (b1 != null) {
+          return ItemTimeRange(start: b1.start, end: b1.end, timeStr: b1.timeStr);
+        }
+        return ItemTimeRange(start: 600, end: 620, timeStr: '10.00 - 10.20 น.');
+      } else {
+        final lunch = plan.periods['lunch'];
+        if (lunch != null) {
+          return ItemTimeRange(start: lunch.start, end: lunch.end, timeStr: lunch.timeStr);
+        }
+        return ItemTimeRange(start: 720, end: 770, timeStr: '12.00 - 12.50 น.');
+      }
+    }
+
+    final pStr = item.period ?? '';
+    final match = RegExp(r'(\d+)(?:\s*-\s*(\d+))?').firstMatch(pStr);
+    if (match != null) {
+      final p1 = match.group(1)!;
+      final p2 = match.group(2) ?? p1;
+      final p1Info = plan.periods[p1];
+      final p2Info = plan.periods[p2];
+      if (p1Info != null && p2Info != null) {
+        final startTime = p1Info.timeStr.split(' - ')[0];
+        final p2Parts = p2Info.timeStr.split(' - ');
+        final endTime = p2Parts.length > 1 ? p2Parts[1] : p2Info.timeStr;
+        return ItemTimeRange(
+          start: p1Info.start,
+          end: p2Info.end,
+          timeStr: '$startTime - $endTime',
+        );
+      }
+    }
+
+    // Default fallback to period 1
+    final p1 = plan.periods['1'];
+    return ItemTimeRange(
+      start: p1?.start ?? 500,
+      end: p1?.end ?? 550,
+      timeStr: p1?.timeStr ?? '08.20 - 09.10 น.',
+    );
   }
 
   Future<FullScheduleData> loadSchedule() async {
@@ -119,7 +174,7 @@ class ScheduleService {
       debugPrint('Error loading SharedPreferences: $e');
     }
 
-    // 1. Try loading from cache first
+    // 1. Cache
     if (prefs != null) {
       final cachedJson = prefs.getString(cacheKey);
       if (cachedJson != null && cachedJson.isNotEmpty) {
@@ -132,7 +187,7 @@ class ScheduleService {
       }
     }
 
-    // 2. If no cache, load from local bundled asset
+    // 2. Bundled local asset
     if (scheduleData == null) {
       try {
         final assetContent = await rootBundle.loadString('assets/data/schedule.json');
@@ -143,7 +198,7 @@ class ScheduleService {
       }
     }
 
-    // 3. Fallback dummy data if both failed
+    // 3. Fallback dummy
     if (scheduleData == null) {
       scheduleData = FullScheduleData(
         updatedAt: DateTime.now().toIso8601String(),
@@ -161,12 +216,12 @@ class ScheduleService {
       );
     }
 
-    // 4. Background fetch latest from GitHub safely
+    // 4. Remote update
     try {
       fetchRemoteUpdate();
     } catch (_) {}
 
-    // 5. Update widget safely
+    // 5. Widget update
     try {
       updateWidget();
     } catch (_) {}
@@ -224,18 +279,19 @@ class ScheduleService {
     final now = DateTime.now();
     final isWeekend = (simulatedHour == null) && isRealWeekend();
 
-    // If real weekend and not simulating, show Weekend Rest status
     if (isWeekend) {
       return CurrentPeriodStatus(
         subjectName: 'วันหยุดสุดสัปดาห์ (${getRealDayThaiName()})',
-        room: 'พักผ่อนตามอัธยาศัย 🎉',
+        room: 'พักผ่อนตามอัธยาศัย',
         timeStr: 'Weekend Holiday',
         teacher: '-',
         badge: '🎉 วันหยุด',
         nextSubject: 'วันจันทร์เจอกันใหม่นะ!',
+        laterSubject: 'ดูตารางเรียนวันจันทร์ล่วงหน้าได้',
         progressPercent: 100,
         activePeriodIndex: -1,
         remainingSeconds: 0,
+        countdownText: '🎉 วันหยุด',
         isWeekend: true,
       );
     }
@@ -249,7 +305,7 @@ class ScheduleService {
     final daySchedule = scheduleData!.schedule[dayKey];
     final plan = scheduleData!.bellPlans[selectedPlanId];
 
-    if (daySchedule == null || plan == null) {
+    if (daySchedule == null || plan == null || daySchedule.items.isEmpty) {
       return CurrentPeriodStatus(
         subjectName: 'ไม่มีข้อมูล',
         room: '-',
@@ -262,94 +318,143 @@ class ScheduleService {
       );
     }
 
-    // Default: After school
-    String subjectName = 'เลิกเรียนแล้ว 🎉';
-    String room = '-';
-    String timeStr = 'พักผ่อนตามอัธยาศัย';
-    String teacher = '-';
-    String badge = '✨ พักผ่อน';
-    String nextSubject = 'พรุ่งนี้เจอกันใหม่นะ!';
-    String? code;
-    int progress = 100;
-    int activeIdx = -1;
-    int remainingSecs = 0;
-    bool isBefore = false;
-    bool isAfter = false;
+    // Resolve time range for every item in today's schedule
+    final itemsWithTime = daySchedule.items.map((item) {
+      return {
+        'item': item,
+        'time': getItemTimeRange(item, plan),
+      };
+    }).toList();
 
-    // Find the first period start
-    final firstPeriodInfo = plan.periods['1'];
-    final firstStartMins = firstPeriodInfo?.start ?? 500; // 08:20 AM = 500 mins
+    final firstItem = itemsWithTime.first['item'] as PeriodItem;
+    final firstTime = itemsWithTime.first['time'] as ItemTimeRange;
+    final lastTime = itemsWithTime.last['time'] as ItemTimeRange;
 
-    if (totalMins < firstStartMins) {
-      isBefore = true;
-      subjectName = 'ยังไม่เริ่มคาบเรียน';
-      room = 'ห้องเรียนประจำ';
-      timeStr = 'เริ่ม 08.20 น.';
-      badge = '⏰ กำลังจะเริ่ม';
-      remainingSecs = (firstStartMins * 60) - totalSecs;
-      if (remainingSecs < 0) remainingSecs = 0;
+    // 1. Before School
+    if (totalMins < firstTime.start) {
+      final remSecs = (firstTime.start * 60) - totalSecs;
+      final remMins = (remSecs / 60).ceil();
+      final nextName = firstItem.name ?? firstItem.title ?? 'คาบแรก';
+      final nextCode = firstItem.code != null && firstItem.code != '-' ? ' (${firstItem.code})' : '';
 
-      if (daySchedule.items.isNotEmpty) {
-        final first = daySchedule.items.first;
-        nextSubject = 'คาบที่ 1: ${first.name ?? first.title ?? ''}';
-        code = first.code;
+      String later = '';
+      if (itemsWithTime.length > 1) {
+        final secondItem = itemsWithTime[1]['item'] as PeriodItem;
+        later = 'ต่อไป: ${secondItem.name ?? secondItem.title ?? ''}';
       }
-      progress = 0;
-    } else {
-      bool foundActive = false;
-      for (int i = 0; i < daySchedule.items.length; i++) {
-        final item = daySchedule.items[i];
-        final periodKey = (i + 1).toString();
-        final timeInfo = plan.periods[periodKey];
 
-        if (timeInfo != null) {
-          final startSecs = timeInfo.start * 60;
-          final endSecs = timeInfo.end * 60;
+      return CurrentPeriodStatus(
+        subjectName: 'ยังไม่เริ่มคาบเรียน',
+        room: firstItem.room ?? 'ห้องเรียนประจำ',
+        timeStr: 'เริ่ม ${firstTime.timeStr.split(" - ")[0]} น.',
+        teacher: firstItem.teacher ?? '-',
+        badge: '⏰ กำลังจะเริ่ม',
+        nextSubject: '$nextName$nextCode',
+        laterSubject: later,
+        progressPercent: 0,
+        activePeriodIndex: -1,
+        remainingSeconds: remSecs > 0 ? remSecs : 0,
+        countdownText: '⏱ เริ่มใน $remMins น.',
+        isBeforeSchool: true,
+        code: firstItem.code,
+      );
+    }
 
-          if (totalSecs >= startSecs && totalSecs < endSecs) {
-            foundActive = true;
-            activeIdx = i;
-            subjectName = item.name ?? item.title ?? (item.type == 'break' ? 'พักเบรก' : 'กำลังเรียน');
-            room = item.room ?? (item.type == 'break' ? 'โรงอาหาร / พักผ่อน' : 'ห้องเรียนปกติ');
-            timeStr = timeInfo.timeStr;
-            teacher = item.teacher ?? '-';
-            badge = item.type == 'break' ? '☕ พักเบรก' : '🟢 กำลังเรียน';
-            code = item.code;
-            remainingSecs = endSecs - totalSecs;
+    // 2. After School (all periods ended)
+    if (totalMins >= lastTime.end) {
+      return CurrentPeriodStatus(
+        subjectName: 'เลิกเรียนแล้ว 🎉',
+        room: 'พักผ่อนตามอัธยาศัย',
+        timeStr: 'หมดคาบเรียนวันนี้',
+        teacher: '-',
+        badge: '✨ พักผ่อน',
+        nextSubject: 'พรุ่งนี้เจอกันใหม่นะ!',
+        laterSubject: 'ดูตารางเรียนวันต่อไปได้',
+        progressPercent: 100,
+        activePeriodIndex: -1,
+        remainingSeconds: 0,
+        countdownText: '✨ เลิกเรียนแล้ว',
+        isAfterSchool: true,
+      );
+    }
 
-            if (i + 1 < daySchedule.items.length) {
-              final next = daySchedule.items[i + 1];
-              nextSubject = 'คาบถัดไป: ${next.name ?? next.title ?? ''}';
-            } else {
-              nextSubject = 'คาบสุดท้ายของวันแล้ว 🎉';
-            }
+    // 3. During School (Check each period OR break!)
+    for (int i = 0; i < itemsWithTime.length; i++) {
+      final item = itemsWithTime[i]['item'] as PeriodItem;
+      final timeInfo = itemsWithTime[i]['time'] as ItemTimeRange;
+      final startSecs = timeInfo.start * 60;
+      final endSecs = timeInfo.end * 60;
 
-            final durationSecs = endSecs - startSecs;
-            final elapsedSecs = totalSecs - startSecs;
-            progress = durationSecs > 0 ? ((elapsedSecs / durationSecs) * 100).round().clamp(0, 100) : 50;
-            break;
-          }
+      if (totalSecs >= startSecs && totalSecs < endSecs) {
+        final remSecs = endSecs - totalSecs;
+        final remMins = (remSecs / 60).ceil();
+        final durationSecs = endSecs - startSecs;
+        final elapsedSecs = totalSecs - startSecs;
+        final progress = durationSecs > 0 ? ((elapsedSecs / durationSecs) * 100).round().clamp(0, 100) : 50;
+
+        final isBreak = item.type == 'break';
+        final isLunch = isBreak && (item.title?.contains('กลางวัน') == true || item.title?.contains('อาหาร') == true);
+
+        String subjectName;
+        String room;
+        String badge;
+
+        if (isBreak) {
+          subjectName = item.title ?? (isLunch ? 'พักกลางวัน' : 'พักเบรก');
+          room = item.room ?? (isLunch ? 'โรงอาหาร' : 'พักผ่อนตามอัธยาศัย');
+          badge = isLunch ? '🍱 พักกลางวัน' : '☕ พักเบรก';
+        } else {
+          subjectName = item.name ?? item.title ?? 'กำลังเรียน';
+          room = item.room ?? 'ห้องเรียนปกติ';
+          badge = '🟢 กำลังเรียน';
         }
-      }
 
-      if (!foundActive) {
-        isAfter = true;
+        String nextSub = 'คาบสุดท้ายของวันแล้ว 🎉';
+        if (i + 1 < itemsWithTime.length) {
+          final nextItem = itemsWithTime[i + 1]['item'] as PeriodItem;
+          final nextTime = itemsWithTime[i + 1]['time'] as ItemTimeRange;
+          final nextTimeStart = nextTime.timeStr.split(' - ')[0];
+          final nextTitle = nextItem.name ?? nextItem.title ?? '';
+          final nextRoom = nextItem.room != null && nextItem.room != '-' ? ' (${nextItem.room})' : '';
+          nextSub = '$nextTitle $nextRoom ($nextTimeStart น.)';
+        }
+
+        String laterSub = '';
+        if (i + 2 < itemsWithTime.length) {
+          final laterItem = itemsWithTime[i + 2]['item'] as PeriodItem;
+          final laterTime = itemsWithTime[i + 2]['time'] as ItemTimeRange;
+          final laterStart = laterTime.timeStr.split(' - ')[0];
+          laterSub = 'ต่อไปอีก: ${laterItem.name ?? laterItem.title ?? ''} ($laterStart น.)';
+        }
+
+        return CurrentPeriodStatus(
+          subjectName: subjectName,
+          room: room,
+          timeStr: timeInfo.timeStr,
+          teacher: item.teacher ?? '-',
+          badge: badge,
+          nextSubject: nextSub,
+          laterSubject: laterSub,
+          progressPercent: progress,
+          activePeriodIndex: i,
+          remainingSeconds: remSecs > 0 ? remSecs : 0,
+          countdownText: '⏱ เหลือ $remMins น.',
+          code: item.code,
+        );
       }
     }
 
+    // Fallback if between gaps
     return CurrentPeriodStatus(
-      subjectName: subjectName,
-      room: room,
-      timeStr: timeStr,
-      teacher: teacher,
-      badge: badge,
-      nextSubject: nextSubject,
-      progressPercent: progress,
-      activePeriodIndex: activeIdx,
-      remainingSeconds: remainingSecs,
-      isBeforeSchool: isBefore,
-      isAfterSchool: isAfter,
-      code: code,
+      subjectName: 'พักผ่อน',
+      room: '-',
+      timeStr: 'ระหว่างคาบ',
+      teacher: '-',
+      badge: '☕ พักเบรก',
+      nextSubject: '-',
+      progressPercent: 50,
+      activePeriodIndex: -1,
+      countdownText: '⏱ พักผ่อน',
     );
   }
 
@@ -367,6 +472,8 @@ class ScheduleService {
         nextSubject: status.nextSubject,
         dayName: actualTodayKey != null ? 'วัน$actualTodayKey' : getRealDayThaiName(),
         progressPercent: status.progressPercent,
+        countdownText: status.countdownText,
+        laterSubject: status.laterSubject,
       );
     } catch (e) {
       debugPrint('Error updating widget: $e');
