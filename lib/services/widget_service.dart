@@ -35,6 +35,7 @@ class WidgetService {
       await HomeWidget.saveWidgetData<int>('progress_percent', progressPercent);
 
       await HomeWidget.updateWidget(
+        name: androidWidgetName,
         androidName: androidWidgetName,
         iOSName: iOSWidgetName,
       );
