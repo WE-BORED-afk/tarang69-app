@@ -34,25 +34,29 @@ jobs:
         run: flutter pub get
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/tarang69-v1.0.${{ github.run_number }}.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: tarang69-app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/tarang69-v1.0.${{ github.run_number }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }} - TARANG69 Android APK
+          name: TARANG69 Android APK - v1.0.${{ github.run_number }}
           body: |
-            🎉 **TARANG69 APK พร้อม Home Screen Widget สำหรับ Android**
+            🎉 **TARANG69 Android APK - v1.0.${{ github.run_number }}**
             
-            - ดาวน์โหลดไฟล์ `app-release.apk` ด้านล่างไปติดตั้งบนมือถือได้ทันที
+            - ดาวน์โหลดไฟล์ `tarang69-v1.0.${{ github.run_number }}.apk` หรือ `app-release.apk` ด้านล่างไปติดตั้งบนมือถือได้ทันที
             - เมื่อติดตั้งแล้ว สามารถกดค้างที่หน้าจอ Home เพื่อเพิ่ม Widget "TARANG69" ได้เลยครับ
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/tarang69-v1.0.${{ github.run_number }}.apk
+            build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
