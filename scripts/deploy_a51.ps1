@@ -4,7 +4,7 @@ param(
     [string]$WirelessEndpoint = "192.168.100.151:37959"
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 $adb = "C:\Users\Advice\.gemini\antigravity\tools\platform-tools\adb.exe"
 if (!(Test-Path $adb)) {
@@ -16,7 +16,7 @@ Write-Host "=== Deploying TARANG69 to Samsung Galaxy A51 ===" -ForegroundColor C
 # 1. Try to connect wireless if specified
 if ($WirelessEndpoint) {
     Write-Host "[*] Checking wireless connection to $WirelessEndpoint..." -ForegroundColor Gray
-    & $adb connect $WirelessEndpoint 2>&1 | Out-Null
+    $null = & $adb connect $WirelessEndpoint
 }
 
 # 2. Find target device
@@ -27,7 +27,18 @@ if (-not $deviceLines) {
     exit 1
 }
 
-$targetDevice = ($deviceLines[0] -split "`t")[0].Trim()
+$targetDevice = ""
+foreach ($line in @($deviceLines)) {
+    $parts = -split $line
+    if ($parts.Count -ge 2 -and $parts[1] -eq "device") {
+        $targetDevice = $parts[0]
+        break
+    }
+}
+if (-not $targetDevice) {
+    Write-Host "[!] Warning: Could not determine target device." -ForegroundColor Yellow
+    exit 1
+}
 Write-Host "[OK] Target device connected: $targetDevice" -ForegroundColor Green
 
 # 3. Resolve APK
@@ -54,6 +65,10 @@ if (-not $ApkPath -or -not (Test-Path $ApkPath)) {
 
 Write-Host "[*] Installing APK: $ApkPath" -ForegroundColor Cyan
 & $adb -s $targetDevice install -r -d "$ApkPath"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[X] ADB install failed." -ForegroundColor Red
+    exit 1
+}
 Write-Host "[OK] ADB Install successful." -ForegroundColor Green
 
 # 4. Copy to MTP Download folder as backup

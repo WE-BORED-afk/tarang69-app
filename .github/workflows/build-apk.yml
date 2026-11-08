@@ -3,6 +3,10 @@ name: Build & Release Android APK
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'scripts/**'
+      - '**.md'
+      - '.gitignore'
   workflow_dispatch:
 
 permissions:
