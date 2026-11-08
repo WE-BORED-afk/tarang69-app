@@ -316,14 +316,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 4),
-              // Refresh button
-              IconButton(
-                icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF64748B)),
-                tooltip: 'รีเฟรชข้อมูล',
-                visualDensity: VisualDensity.compact,
-                onPressed: _refreshFromGitHub,
-              ),
             ],
           ),
         ],
