@@ -1,6 +1,7 @@
-# Deploy / Install TARANG69 APK to connected Samsung Galaxy A51
+# Deploy / Install TARANG69 APK to Samsung Galaxy A51 (Wireless & USB supported)
 param(
-    [string]$ApkPath
+    [string]$ApkPath,
+    [string]$WirelessEndpoint = "192.168.100.151:37959"
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,18 +13,25 @@ if (!(Test-Path $adb)) {
 
 Write-Host "=== Deploying TARANG69 to Samsung Galaxy A51 ===" -ForegroundColor Cyan
 
-# 1. Check device
-$deviceMatch = (& $adb devices) | Select-String -Pattern "\bdevice\b"
-if (-not $deviceMatch) {
-    Write-Host "[!] Warning: No authorized device found." -ForegroundColor Yellow
+# 1. Try to connect wireless if specified
+if ($WirelessEndpoint) {
+    Write-Host "[*] Checking wireless connection to $WirelessEndpoint..." -ForegroundColor Gray
+    & $adb connect $WirelessEndpoint 2>&1 | Out-Null
+}
+
+# 2. Find target device
+$deviceLines = (& $adb devices) | Where-Object { $_ -match "\bdevice\b" }
+if (-not $deviceLines) {
+    Write-Host "[!] Warning: No authorized device found. Please verify USB cable or Wireless Debugging is enabled." -ForegroundColor Yellow
     & $adb devices
     exit 1
 }
-Write-Host "[OK] Device authorized and connected." -ForegroundColor Green
 
-# 2. Resolve APK
+$targetDevice = ($deviceLines[0] -split "`t")[0].Trim()
+Write-Host "[OK] Target device connected: $targetDevice" -ForegroundColor Green
+
+# 3. Resolve APK
 if (-not $ApkPath -or -not (Test-Path $ApkPath)) {
-    # Check if local release build exists
     $localApk = "build\app\outputs\flutter-apk\app-release.apk"
     if (Test-Path $localApk) {
         $ApkPath = (Resolve-Path $localApk).Path
@@ -45,10 +53,10 @@ if (-not $ApkPath -or -not (Test-Path $ApkPath)) {
 }
 
 Write-Host "[*] Installing APK: $ApkPath" -ForegroundColor Cyan
-& $adb install -r -d "$ApkPath"
+& $adb -s $targetDevice install -r -d "$ApkPath"
 Write-Host "[OK] ADB Install successful." -ForegroundColor Green
 
-# 3. Copy to MTP Download folder as backup
+# 4. Copy to MTP Download folder as backup
 try {
     $shell = New-Object -ComObject Shell.Application
     $thisPC = $shell.Namespace(17)
@@ -64,10 +72,10 @@ try {
         }
     }
 } catch {
-    # Ignore MTP errors if busy
+    # Ignore MTP errors
 }
 
-# 4. Launch App
+# 5. Launch App
 Write-Host "[*] Launching TARANG69 on device..." -ForegroundColor Cyan
-& $adb shell am start -n com.example.tarang69/.MainActivity | Out-Null
-Write-Host "[OK] TARANG69 installed and launched successfully!" -ForegroundColor Green
+& $adb -s $targetDevice shell am start -n com.example.tarang69/.MainActivity | Out-Null
+Write-Host "[OK] TARANG69 installed and launched successfully! 🎉" -ForegroundColor Green
