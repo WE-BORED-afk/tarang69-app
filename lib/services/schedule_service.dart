@@ -64,6 +64,7 @@ class ScheduleService extends ChangeNotifier {
         _httpClient = httpClient;
 
   FullScheduleData? scheduleData;
+  String? _rawScheduleJson;
   String selectedPlanId = 'plan1';
 
   int? simulatedHour;
@@ -194,6 +195,7 @@ class ScheduleService extends ChangeNotifier {
         try {
           final decoded = jsonDecode(cachedJson) as Map<String, dynamic>;
           scheduleData = FullScheduleData.fromJson(decoded);
+          _rawScheduleJson = cachedJson;
         } catch (e) {
           debugPrint('Error parsing cached schedule: $e');
         }
@@ -206,6 +208,7 @@ class ScheduleService extends ChangeNotifier {
         final assetContent = await rootBundle.loadString('assets/data/schedule.json');
         final decoded = jsonDecode(assetContent) as Map<String, dynamic>;
         scheduleData = FullScheduleData.fromJson(decoded);
+        _rawScheduleJson = assetContent;
       } catch (e) {
         debugPrint('Error loading asset schedule: $e');
       }
@@ -232,7 +235,7 @@ class ScheduleService extends ChangeNotifier {
 
     // 5. Widget update
     try {
-      updateWidget();
+      await updateWidget();
     } catch (_) {}
 
     return scheduleData!;
@@ -246,7 +249,7 @@ class ScheduleService extends ChangeNotifier {
       await prefs.setString(planKey, planId);
     } catch (_) {}
     try {
-      updateWidget();
+      await updateWidget();
     } catch (_) {}
   }
 
@@ -257,14 +260,16 @@ class ScheduleService extends ChangeNotifier {
       final response = await (client != null ? client.get(uri) : http.get(uri))
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final bodyStr = utf8.decode(response.bodyBytes);
+        final decoded = jsonDecode(bodyStr) as Map<String, dynamic>;
         final parsed = FullScheduleData.fromJson(decoded);
         scheduleData = parsed;
+        _rawScheduleJson = bodyStr;
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(cacheKey, jsonEncode(decoded));
         } catch (_) {}
-        updateWidget();
+        await updateWidget();
         notifyListeners();
         return true;
       }
@@ -469,12 +474,12 @@ class ScheduleService extends ChangeNotifier {
     );
   }
 
-  void updateWidget() {
+  Future<void> updateWidget() async {
     try {
       final actualTodayKey = getActualTodayThaiKey();
       final status = getCurrentStatus(actualTodayKey ?? 'จันทร์');
 
-      WidgetService.updateWidgetData(
+      await WidgetService.updateWidgetData(
         subjectName: status.subjectName,
         subjectRoom: status.room,
         subjectTime: status.timeStr,
@@ -485,6 +490,9 @@ class ScheduleService extends ChangeNotifier {
         progressPercent: status.progressPercent,
         countdownText: status.countdownText,
         laterSubject: status.laterSubject,
+        scheduleJson: _rawScheduleJson,
+        selectedPlanId: selectedPlanId,
+        isSimulatedTime: simulatedHour != null,
       );
     } catch (e) {
       debugPrint('Error updating widget: $e');

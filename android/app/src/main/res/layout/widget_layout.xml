@@ -56,7 +56,24 @@
             android:text="⏱ อีก 15 น."
             android:textSize="11sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:maxLines="1" />
+
+        <Chronometer
+            android:id="@+id/widget_chronometer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            android:background="@drawable/widget_countdown_pill"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:countDown="true"
+            android:format="⏱ เหลือ %s"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:maxLines="1" />
     </LinearLayout>
 
     <!-- Sub-info: Time and Status -->

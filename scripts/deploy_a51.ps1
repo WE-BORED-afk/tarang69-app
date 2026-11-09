@@ -40,16 +40,19 @@ function Find-MdnsWirelessEndpoint {
     return $fallback
 }
 
+$endpointCache = "$env:TEMP\tarang69_a51_endpoint.txt"
+
 Write-Host "=== Deploying TARANG69 to Samsung Galaxy A51 ===" -ForegroundColor Cyan
 & $adb start-server | Out-Null
 
-# 1. Resolve USB / Wireless ADB connection (auto-discover changing TLS port via mDNS)
+# 1. Resolve USB / Wireless ADB connection (auto-discover changing TLS port via mDNS + cached endpoint fallback)
 if ($WirelessEndpoint) {
     Write-Host "[*] Connecting to specified endpoint $WirelessEndpoint..." -ForegroundColor Gray
     $null = & $adb connect $WirelessEndpoint
 }
 
 $authorized = Get-AuthorizedAdbDevices
+$triedCached = $false
 if (-not $authorized) {
     Write-Host "[*] Waiting for USB or Wireless ADB (mDNS) discovery..." -ForegroundColor Gray
     for ($i = 0; $i -lt 10 -and -not $authorized; $i++) {
@@ -59,8 +62,17 @@ if (-not $authorized) {
             $mdnsEndpoint = Find-MdnsWirelessEndpoint
             if ($mdnsEndpoint) {
                 Write-Host "[*] Discovered Wireless ADB endpoint: $mdnsEndpoint" -ForegroundColor Gray
+                Set-Content -Path $endpointCache -Value $mdnsEndpoint -NoNewline -ErrorAction SilentlyContinue
                 $null = & $adb connect $mdnsEndpoint
                 $authorized = Get-AuthorizedAdbDevices
+            } elseif (-not $triedCached -and (Test-Path $endpointCache)) {
+                $triedCached = $true
+                $cachedEndpoint = (Get-Content -Path $endpointCache -Raw -ErrorAction SilentlyContinue).Trim()
+                if ($cachedEndpoint) {
+                    Write-Host "[*] mDNS quiet; trying last Wireless ADB endpoint: $cachedEndpoint" -ForegroundColor Gray
+                    $null = & $adb connect $cachedEndpoint
+                    $authorized = Get-AuthorizedAdbDevices
+                }
             }
         }
     }
@@ -78,6 +90,11 @@ if (-not $targetDevice) {
     Write-Host "[!] Warning: No authorized device found. Please verify USB cable or Wireless Debugging is enabled & paired." -ForegroundColor Yellow
     & $adb devices
     exit 1
+}
+if ($targetDevice -match "^\d+\.\d+\.\d+\.\d+:\d+$") {
+    Set-Content -Path $endpointCache -Value $targetDevice -NoNewline -ErrorAction SilentlyContinue
+} elseif ($mdnsNow = Find-MdnsWirelessEndpoint) {
+    Set-Content -Path $endpointCache -Value $mdnsNow -NoNewline -ErrorAction SilentlyContinue
 }
 Write-Host "[OK] Target device connected: $targetDevice" -ForegroundColor Green
 

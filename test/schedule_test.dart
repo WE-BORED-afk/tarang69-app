@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -144,5 +145,46 @@ void main() {
     expect(ScheduleService.parsePeriodRange('คาบที่ 6 - 8 (13.40 - 16.10 น.)'), (6, 8));
     expect(ScheduleService.parsePeriodRange(null), isNull);
     expect(ScheduleService.parsePeriodRange('กิจกรรม'), isNull);
+  });
+
+  test('ScheduleService syncs raw schedule JSON, plan ID, and simulation state to HomeWidget', () async {
+    final savedWidgetData = <String, dynamic>{};
+    const channel = MethodChannel('home_widget');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'saveWidgetData') {
+        final args = Map<String, dynamic>.from(call.arguments as Map);
+        savedWidgetData[args['id'] as String] = args['data'];
+        return true;
+      }
+      if (call.method == 'updateWidget') {
+        return true;
+      }
+      return null;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    final service = ScheduleService(
+      clock: () => DateTime(2026, 11, 9, 10, 5, 0),
+      httpClient: MockClient((_) async => http.Response('', 500)),
+    );
+
+    await service.loadSchedule();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(savedWidgetData['selected_plan_id'], 'plan1');
+    expect(savedWidgetData['simulated_active'], isFalse);
+    final widgetJson = jsonDecode(savedWidgetData['schedule_json'] as String) as Map<String, dynamic>;
+    expect(widgetJson['schedule']['จันทร์']['items'][0]['name'], 'ชีวะ');
+
+    await service.setPlan('plan4');
+    expect(savedWidgetData['selected_plan_id'], 'plan4');
+
+    service.setSimulatedTime(12, 30, 'Test Lunch');
+    await pumpEventQueue();
+    expect(savedWidgetData['simulated_active'], isTrue);
   });
 }

@@ -24,6 +24,9 @@ class WidgetService {
     required int progressPercent,
     String? countdownText,
     String? laterSubject,
+    String? scheduleJson,
+    String? selectedPlanId,
+    bool isSimulatedTime = false,
   }) async {
     if (kIsWeb) return;
     try {
@@ -41,6 +44,13 @@ class WidgetService {
       if (laterSubject != null) {
         await HomeWidget.saveWidgetData<String>('later_subject', laterSubject);
       }
+      if (scheduleJson != null) {
+        await HomeWidget.saveWidgetData<String>('schedule_json', scheduleJson);
+      }
+      if (selectedPlanId != null) {
+        await HomeWidget.saveWidgetData<String>('selected_plan_id', selectedPlanId);
+      }
+      await HomeWidget.saveWidgetData<bool>('simulated_active', isSimulatedTime);
 
       await HomeWidget.updateWidget(
         name: androidWidgetName,
