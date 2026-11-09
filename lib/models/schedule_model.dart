@@ -5,7 +5,6 @@ class PeriodItem {
   final String? name;
   final String? teacher;
   final String? room;
-  final bool isDouble;
   final String? title;
   final String? time;
   final String? icon;
@@ -18,7 +17,6 @@ class PeriodItem {
     this.name,
     this.teacher,
     this.room,
-    this.isDouble = false,
     this.title,
     this.time,
     this.icon,
@@ -33,27 +31,12 @@ class PeriodItem {
       name: json['name'],
       teacher: json['teacher'],
       room: json['room'],
-      isDouble: json['isDouble'] ?? false,
       title: json['title'],
       time: json['time'],
       icon: json['icon'],
       color: json['color'],
     );
   }
-
-  Map<String, dynamic> toJson() => {
-    'type': type,
-    if (period != null) 'period': period,
-    if (code != null) 'code': code,
-    if (name != null) 'name': name,
-    if (teacher != null) 'teacher': teacher,
-    if (room != null) 'room': room,
-    'isDouble': isDouble,
-    if (title != null) 'title': title,
-    if (time != null) 'time': time,
-    if (icon != null) 'icon': icon,
-    if (color != null) 'color': color,
-  };
 }
 
 class DaySchedule {

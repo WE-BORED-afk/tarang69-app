@@ -50,11 +50,18 @@ class ItemTimeRange {
   ItemTimeRange({required this.start, required this.end, required this.timeStr});
 }
 
-class ScheduleService {
+class ScheduleService extends ChangeNotifier {
   static const String remoteJsonUrl =
       'https://raw.githubusercontent.com/WE-BORED-afk/tarang69/main/data/schedule.json';
   static const String cacheKey = 'tarang69_schedule_cache';
   static const String planKey = 'tarang69_selected_plan';
+
+  final DateTime Function() _clock;
+  final http.Client? _httpClient;
+
+  ScheduleService({DateTime Function()? clock, http.Client? httpClient})
+      : _clock = clock ?? DateTime.now,
+        _httpClient = httpClient;
 
   FullScheduleData? scheduleData;
   String selectedPlanId = 'plan1';
@@ -68,15 +75,16 @@ class ScheduleService {
     simulatedMinute = minute;
     simulatedLabel = label;
     updateWidget();
+    notifyListeners();
   }
 
   bool isRealWeekend() {
-    final weekday = DateTime.now().weekday;
+    final weekday = _clock().weekday;
     return weekday == DateTime.saturday || weekday == DateTime.sunday;
   }
 
   String getRealDayThaiName() {
-    final weekday = DateTime.now().weekday;
+    final weekday = _clock().weekday;
     switch (weekday) {
       case 1:
         return 'วันจันทร์';
@@ -98,7 +106,7 @@ class ScheduleService {
   }
 
   String? getActualTodayThaiKey() {
-    final weekday = DateTime.now().weekday;
+    final weekday = _clock().weekday;
     switch (weekday) {
       case 1:
         return 'จันทร์';
@@ -119,6 +127,14 @@ class ScheduleService {
     return getActualTodayThaiKey() ?? 'จันทร์';
   }
 
+  static (int, int)? parsePeriodRange(String? period) {
+    final match = RegExp(r'(\d+)(?:\s*-\s*(\d+))?').firstMatch(period ?? '');
+    if (match == null) return null;
+    final start = int.parse(match.group(1)!);
+    final end = int.parse(match.group(2) ?? match.group(1)!);
+    return (start, end);
+  }
+
   ItemTimeRange getItemTimeRange(PeriodItem item, BellPlan plan) {
     if (item.type == 'break') {
       final title = item.title ?? '';
@@ -137,13 +153,10 @@ class ScheduleService {
       }
     }
 
-    final pStr = item.period ?? '';
-    final match = RegExp(r'(\d+)(?:\s*-\s*(\d+))?').firstMatch(pStr);
-    if (match != null) {
-      final p1 = match.group(1)!;
-      final p2 = match.group(2) ?? p1;
-      final p1Info = plan.periods[p1];
-      final p2Info = plan.periods[p2];
+    final range = parsePeriodRange(item.period);
+    if (range != null) {
+      final p1Info = plan.periods['${range.$1}'];
+      final p2Info = plan.periods['${range.$2}'];
       if (p1Info != null && p2Info != null) {
         final startTime = p1Info.timeStr.split(' - ')[0];
         final p2Parts = p2Info.timeStr.split(' - ');
@@ -199,27 +212,23 @@ class ScheduleService {
     }
 
     // 3. Fallback dummy
-    if (scheduleData == null) {
-      scheduleData = FullScheduleData(
-        updatedAt: DateTime.now().toIso8601String(),
-        dayOrder: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'],
-        schedule: {
-          'จันทร์': DaySchedule(name: 'วันจันทร์', en: 'Monday', colorClass: '', items: []),
-          'อังคาร': DaySchedule(name: 'วันอังคาร', en: 'Tuesday', colorClass: '', items: []),
-          'พุธ': DaySchedule(name: 'วันพุธ', en: 'Wednesday', colorClass: '', items: []),
-          'พฤหัสบดี': DaySchedule(name: 'วันพฤหัสบดี', en: 'Thursday', colorClass: '', items: []),
-          'ศุกร์': DaySchedule(name: 'วันศุกร์', en: 'Friday', colorClass: '', items: []),
-        },
-        bellPlans: {
-          'plan1': BellPlan(id: 'plan1', name: 'แผน 1 (ปกติ)', shortName: 'แผน 1 ปกติ', desc: '', periods: {}),
-        },
-      );
-    }
+    scheduleData ??= FullScheduleData(
+      updatedAt: _clock().toIso8601String(),
+      dayOrder: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'],
+      schedule: {
+        'จันทร์': DaySchedule(name: 'วันจันทร์', en: 'Monday', colorClass: '', items: []),
+        'อังคาร': DaySchedule(name: 'วันอังคาร', en: 'Tuesday', colorClass: '', items: []),
+        'พุธ': DaySchedule(name: 'วันพุธ', en: 'Wednesday', colorClass: '', items: []),
+        'พฤหัสบดี': DaySchedule(name: 'วันพฤหัสบดี', en: 'Thursday', colorClass: '', items: []),
+        'ศุกร์': DaySchedule(name: 'วันศุกร์', en: 'Friday', colorClass: '', items: []),
+      },
+      bellPlans: {
+        'plan1': BellPlan(id: 'plan1', name: 'แผน 1 (ปกติ)', shortName: 'แผน 1 ปกติ', desc: '', periods: {}),
+      },
+    );
 
-    // 4. Remote update
-    try {
-      fetchRemoteUpdate();
-    } catch (_) {}
+    // 4. Remote update (non-blocking)
+    fetchRemoteUpdate();
 
     // 5. Widget update
     try {
@@ -231,6 +240,7 @@ class ScheduleService {
 
   Future<void> setPlan(String planId) async {
     selectedPlanId = planId;
+    notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(planKey, planId);
@@ -242,8 +252,9 @@ class ScheduleService {
 
   Future<bool> fetchRemoteUpdate() async {
     try {
-      final response = await http
-          .get(Uri.parse(remoteJsonUrl))
+      final uri = Uri.parse(remoteJsonUrl);
+      final client = _httpClient;
+      final response = await (client != null ? client.get(uri) : http.get(uri))
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final decoded = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -254,6 +265,7 @@ class ScheduleService {
           await prefs.setString(cacheKey, jsonEncode(decoded));
         } catch (_) {}
         updateWidget();
+        notifyListeners();
         return true;
       }
     } catch (e) {
@@ -276,7 +288,7 @@ class ScheduleService {
       );
     }
 
-    final now = DateTime.now();
+    final now = _clock();
     final isWeekend = (simulatedHour == null) && isRealWeekend();
 
     if (isWeekend) {

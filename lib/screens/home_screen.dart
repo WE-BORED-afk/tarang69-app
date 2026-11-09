@@ -15,6 +15,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+const bool _enableTimeSimulator = bool.fromEnvironment('ENABLE_TIME_SIM');
+
 class _HomeScreenState extends State<HomeScreen> {
   String selectedDay = 'จันทร์';
   bool isTableView = false;
@@ -27,11 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     selectedDay = widget.scheduleService.getDefaultViewDayKey();
+    widget.scheduleService.addListener(_onServiceChanged);
     _loadData();
 
     // Live countdown timer ticking every second
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
+      if (mounted && !isLoading && !isTableView) {
         setState(() {});
       }
     });
@@ -40,7 +43,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    widget.scheduleService.removeListener(_onServiceChanged);
     super.dispose();
+  }
+
+  void _onServiceChanged() {
+    if (!mounted) return;
+    setState(() {
+      data = widget.scheduleService.scheduleData;
+    });
   }
 
   Future<void> _loadData() async {
@@ -48,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final result = await widget.scheduleService.loadSchedule();
       if (mounted) {
         setState(() {
-          data = result;
+          data = widget.scheduleService.scheduleData ?? result;
           isLoading = false;
         });
       }
@@ -71,9 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
         plans: data!.bellPlans,
         currentPlanId: widget.scheduleService.selectedPlanId,
         onPlanSelected: (newPlanId) {
-          setState(() {
-            widget.scheduleService.setPlan(newPlanId);
-          });
+          widget.scheduleService.setPlan(newPlanId);
         },
       ),
     );
@@ -83,30 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       widget.scheduleService.setSimulatedTime(h, m, label);
     });
-  }
-
-  Future<void> _refreshFromGitHub() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('กำลังซิงค์ข้อมูลล่าสุดจาก GitHub...'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-    final updated = await widget.scheduleService.fetchRemoteUpdate();
-    if (mounted) {
-      setState(() {
-        if (widget.scheduleService.scheduleData != null) {
-          data = widget.scheduleService.scheduleData;
-        }
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(updated ? 'อัปเดตข้อมูลตารางเรียนสำเร็จ! ✨' : 'ใช้ข้อมูลล่าสุดในเครื่องเรียบร้อย'),
-          backgroundColor: updated ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   @override
@@ -123,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final plan = data!.bellPlans[widget.scheduleService.selectedPlanId];
     final actualTodayKey = widget.scheduleService.getActualTodayThaiKey();
     final isToday = selectedDay == actualTodayKey;
-    final status = widget.scheduleService.getCurrentStatus(selectedDay);
+    final status = widget.scheduleService.getCurrentStatus(actualTodayKey ?? 'จันทร์');
 
     return Scaffold(
       body: Container(
@@ -196,8 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // Right Actions (View switch + Hidden Simulator) - NO duplicate plan selector here!
           Row(
             children: [
-              // Simulator toggle button (ซ่อนไว้ตามคำขอ แต่คงโค้ดไว้เปิดใช้งานได้เมื่อต้องการ)
-              if (false)
+              // Simulator toggle button (ซ่อนไว้ตามคำขอ เปิดใช้ด้วย --dart-define=ENABLE_TIME_SIM=true)
+              if (_enableTimeSimulator)
                 IconButton(
                   icon: Icon(
                     showSimulator ? Icons.timer_rounded : Icons.timer_outlined,
@@ -349,7 +334,6 @@ class _HomeScreenState extends State<HomeScreen> {
         // 3. Live Countdown Status Banner
         NowNextBanner(
           currentSubject: status.subjectName,
-          room: status.room,
           timeRange: status.timeStr,
           teacher: status.teacher,
           nextSubject: status.nextSubject,
@@ -621,25 +605,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
               rows: data!.dayOrder.map((day) {
                 final daySched = data!.schedule[day];
-                final subjects = daySched?.items.where((it) => it.type != 'break').toList() ?? [];
+                final slots = List<PeriodItem?>.filled(8, null);
+                for (final item in daySched?.items ?? const <PeriodItem>[]) {
+                  if (item.type == 'break') continue;
+                  final range = ScheduleService.parsePeriodRange(item.period);
+                  if (range == null) continue;
+                  for (int p = range.$1; p <= range.$2; p++) {
+                    if (p >= 1 && p <= 8) slots[p - 1] = item;
+                  }
+                }
 
                 return DataRow(
                   cells: [
                     DataCell(Text(day, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF334155)))),
-                    ...List.generate(8, (i) {
-                      if (i < subjects.length) {
-                        final sub = subjects[i];
-                        return DataCell(
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(sub.name ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                            ],
-                          ),
-                        );
-                      }
-                      return const DataCell(Text('-'));
+                    ...slots.map((sub) {
+                      if (sub == null) return const DataCell(Text('-'));
+                      return DataCell(
+                        Text(sub.name ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                      );
                     }),
                   ],
                 );

@@ -1,7 +1,8 @@
 # Deploy / Install TARANG69 APK to Samsung Galaxy A51 (Wireless & USB supported)
 param(
     [string]$ApkPath,
-    [string]$WirelessEndpoint = "192.168.100.151:37959"
+    [string]$WirelessEndpoint,
+    [switch]$CheckOnly
 )
 
 $ErrorActionPreference = "Continue"
@@ -11,35 +12,78 @@ if (!(Test-Path $adb)) {
     $adb = "adb"
 }
 
-Write-Host "=== Deploying TARANG69 to Samsung Galaxy A51 ===" -ForegroundColor Cyan
+function Get-AuthorizedAdbDevices {
+    $devices = @()
+    foreach ($line in (& $adb devices)) {
+        if ($line.Trim() -match "^(\S+)\s+device(?:\s|$)") {
+            $devices += $Matches[1]
+        }
+    }
+    return $devices
+}
 
-# 1. Try to connect wireless if specified
+function Find-MdnsWirelessEndpoint {
+    $lines = & $adb mdns services 2>$null
+    $fallback = $null
+    foreach ($line in $lines) {
+        if ($line.Trim() -match "^(\S+)\s+_adb-tls-connect\._tcp\s+(\S+)$") {
+            $serviceName = $Matches[1]
+            $endpoint = $Matches[2]
+            if ($serviceName -like "*R58N34WMCKZ*" -or $endpoint -like "192.168.100.151:*") {
+                return $endpoint
+            }
+            if (-not $fallback) {
+                $fallback = $endpoint
+            }
+        }
+    }
+    return $fallback
+}
+
+Write-Host "=== Deploying TARANG69 to Samsung Galaxy A51 ===" -ForegroundColor Cyan
+& $adb start-server | Out-Null
+
+# 1. Resolve USB / Wireless ADB connection (auto-discover changing TLS port via mDNS)
 if ($WirelessEndpoint) {
-    Write-Host "[*] Checking wireless connection to $WirelessEndpoint..." -ForegroundColor Gray
+    Write-Host "[*] Connecting to specified endpoint $WirelessEndpoint..." -ForegroundColor Gray
     $null = & $adb connect $WirelessEndpoint
 }
 
-# 2. Find target device
-$deviceLines = (& $adb devices) | Where-Object { $_ -match "\bdevice\b" }
-if (-not $deviceLines) {
-    Write-Host "[!] Warning: No authorized device found. Please verify USB cable or Wireless Debugging is enabled." -ForegroundColor Yellow
+$authorized = Get-AuthorizedAdbDevices
+if (-not $authorized) {
+    Write-Host "[*] Waiting for USB or Wireless ADB (mDNS) discovery..." -ForegroundColor Gray
+    for ($i = 0; $i -lt 10 -and -not $authorized; $i++) {
+        Start-Sleep -Milliseconds 500
+        $authorized = Get-AuthorizedAdbDevices
+        if (-not $authorized -and $i -ge 2) {
+            $mdnsEndpoint = Find-MdnsWirelessEndpoint
+            if ($mdnsEndpoint) {
+                Write-Host "[*] Discovered Wireless ADB endpoint: $mdnsEndpoint" -ForegroundColor Gray
+                $null = & $adb connect $mdnsEndpoint
+                $authorized = Get-AuthorizedAdbDevices
+            }
+        }
+    }
+}
+
+# 2. Pick preferred target device (USB > Wireless A51 > first online device)
+$targetDevice = ($authorized | Where-Object { $_ -eq "R58N34WMCKZ" } | Select-Object -First 1)
+if (-not $targetDevice) {
+    $targetDevice = ($authorized | Where-Object { $_ -like "adb-R58N34WMCKZ*" -or $_ -like "192.168.100.151:*" } | Select-Object -First 1)
+}
+if (-not $targetDevice) {
+    $targetDevice = ($authorized | Select-Object -First 1)
+}
+if (-not $targetDevice) {
+    Write-Host "[!] Warning: No authorized device found. Please verify USB cable or Wireless Debugging is enabled & paired." -ForegroundColor Yellow
     & $adb devices
     exit 1
 }
-
-$targetDevice = ""
-foreach ($line in @($deviceLines)) {
-    $parts = -split $line
-    if ($parts.Count -ge 2 -and $parts[1] -eq "device") {
-        $targetDevice = $parts[0]
-        break
-    }
-}
-if (-not $targetDevice) {
-    Write-Host "[!] Warning: Could not determine target device." -ForegroundColor Yellow
-    exit 1
-}
 Write-Host "[OK] Target device connected: $targetDevice" -ForegroundColor Green
+
+if ($CheckOnly) {
+    exit 0
+}
 
 # 3. Resolve APK
 if (-not $ApkPath -or -not (Test-Path $ApkPath)) {

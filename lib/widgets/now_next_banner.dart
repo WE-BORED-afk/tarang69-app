@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class NowNextBanner extends StatelessWidget {
   final String currentSubject;
-  final String room;
   final String timeRange;
   final String teacher;
   final String nextSubject;
@@ -16,7 +15,6 @@ class NowNextBanner extends StatelessWidget {
   const NowNextBanner({
     super.key,
     required this.currentSubject,
-    required this.room,
     required this.timeRange,
     required this.teacher,
     required this.nextSubject,
@@ -70,22 +68,29 @@ class NowNextBanner extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text('🎉 ', style: TextStyle(fontSize: 12)),
-                      Text(
-                        'วันหยุดสุดสัปดาห์',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('🎉 ', style: TextStyle(fontSize: 12)),
+                        Flexible(
+                          child: Text(
+                            'วันหยุดสุดสัปดาห์',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
@@ -146,35 +151,42 @@ class NowNextBanner extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isAfterSchool
-                          ? Icons.stars_rounded
-                          : isBeforeSchool
-                              ? Icons.wb_sunny_rounded
-                              : Icons.radio_button_checked,
-                      size: 14,
-                      color: isAfterSchool ? Colors.amberAccent : Colors.greenAccent,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isAfterSchool
-                          ? 'เลิกเรียนแล้ว'
-                          : isBeforeSchool
-                              ? 'เตรียมตัวเข้าเรียน'
-                              : 'คาบเรียนปัจจุบัน',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isAfterSchool
+                            ? Icons.stars_rounded
+                            : isBeforeSchool
+                                ? Icons.wb_sunny_rounded
+                                : Icons.radio_button_checked,
+                        size: 14,
+                        color: isAfterSchool ? Colors.amberAccent : Colors.greenAccent,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          isAfterSchool
+                              ? 'เลิกเรียนแล้ว'
+                              : isBeforeSchool
+                                  ? 'เตรียมตัวเข้าเรียน'
+                                  : 'คาบเรียนปัจจุบัน',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               if (hasCountdown)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -222,18 +234,24 @@ class NowNextBanner extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              if (teacher != '-') ...[
-                Text(
-                  '👨‍🏫 $teacher',
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-              const Spacer(),
-              if (hasCountdown)
+              if (teacher != '-')
+                Expanded(
+                  child: Text(
+                    '👨‍🏫 $teacher',
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                )
+              else
+                const Spacer(),
+              if (hasCountdown) ...[
+                if (teacher != '-') const SizedBox(width: 8),
                 Text(
                   timeRange,
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
+              ],
             ],
           ),
           const SizedBox(height: 14),

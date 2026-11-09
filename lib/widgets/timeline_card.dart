@@ -5,14 +5,12 @@ class TimelineCard extends StatelessWidget {
   final PeriodItem item;
   final String timeStr;
   final bool isActive;
-  final bool isPast;
 
   const TimelineCard({
     super.key,
     required this.item,
     required this.timeStr,
     this.isActive = false,
-    this.isPast = false,
   });
 
   @override
