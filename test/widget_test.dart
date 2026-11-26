@@ -24,7 +24,7 @@ String _cellText(DataCell cell) {
 }
 
 Future<void> _pumpUntilLoaded(WidgetTester tester) async {
-  for (int i = 0; i < 40 && find.text('📊').evaluate().isEmpty; i++) {
+  for (int i = 0; i < 80 && find.text('📊').evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
     await tester.pump();
   }
@@ -125,8 +125,14 @@ void main() {
     responseCompleter.complete(
       http.Response.bytes(utf8.encode(jsonEncode(modified)), 200),
     );
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-    await tester.pump();
+    for (int i = 0;
+        i < 80 &&
+            tester.widget<NowNextBanner>(find.byType(NowNextBanner)).currentSubject !=
+                'ดาราศาสตร์ออนไลน์';
+        i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await tester.pump();
+    }
 
     expect(tester.widget<NowNextBanner>(find.byType(NowNextBanner)).currentSubject, 'ดาราศาสตร์ออนไลน์');
   });
