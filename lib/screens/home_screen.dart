@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../services/schedule_service.dart';
+import '../services/widget_service.dart';
 import '../widgets/now_next_banner.dart';
 import '../widgets/timeline_card.dart';
 import '../widgets/plan_bottom_sheet.dart';
@@ -17,20 +18,26 @@ class HomeScreen extends StatefulWidget {
 
 const bool _enableTimeSimulator = bool.fromEnvironment('ENABLE_TIME_SIM');
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String selectedDay = 'จันทร์';
+  String? _lastKnownDayKey;
   bool isTableView = false;
   FullScheduleData? data;
   bool isLoading = true;
   bool showSimulator = false;
+  bool _needsExactAlarmPermission = false;
+  bool _dismissedExactAlarmBanner = false;
   Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
+    _lastKnownDayKey = widget.scheduleService.getActualTodayThaiKey();
     selectedDay = widget.scheduleService.getDefaultViewDayKey();
+    WidgetsBinding.instance.addObserver(this);
     widget.scheduleService.addListener(_onServiceChanged);
     _loadData();
+    _checkExactAlarmPermission();
 
     // Live countdown timer ticking every second
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -43,8 +50,49 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     widget.scheduleService.removeListener(_onServiceChanged);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    final currentDayKey = widget.scheduleService.getActualTodayThaiKey();
+    if (currentDayKey != _lastKnownDayKey) {
+      _lastKnownDayKey = currentDayKey;
+      selectedDay = widget.scheduleService.getDefaultViewDayKey();
+    }
+    _checkExactAlarmPermission();
+    widget.scheduleService.fetchRemoteUpdate();
+    widget.scheduleService.updateWidget();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _checkExactAlarmPermission() async {
+    final canExact = await WidgetService.canScheduleExactAlarms();
+    if (mounted && _needsExactAlarmPermission != !canExact) {
+      setState(() {
+        _needsExactAlarmPermission = !canExact;
+      });
+    }
+  }
+
+  Future<void> _onManualRefresh() async {
+    final ok = await widget.scheduleService.fetchRemoteUpdate();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            ok ? 'อัปเดตตารางเรียนล่าสุดแล้ว' : 'ไม่สามารถซิงก์ออนไลน์ได้ ใช้ข้อมูลในเครื่อง',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 
   void _onServiceChanged() {
@@ -80,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => PlanBottomSheet(
         plans: data!.bellPlans,
-        currentPlanId: widget.scheduleService.selectedPlanId,
+        currentPlanId:
+            widget.scheduleService.resolveActivePlan(data)?.id ?? widget.scheduleService.selectedPlanId,
         onPlanSelected: (newPlanId) {
           widget.scheduleService.setPlan(newPlanId);
         },
@@ -96,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || data == null) {
+    if (isLoading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
@@ -104,8 +153,37 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
+    if (data == null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'ไม่สามารถโหลดข้อมูลตารางเรียนได้',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      isLoading = true;
+                    });
+                    _loadData();
+                  },
+                  child: const Text('ลองใหม่'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final daySchedule = data!.schedule[selectedDay];
-    final plan = data!.bellPlans[widget.scheduleService.selectedPlanId];
+    final plan = widget.scheduleService.resolveActivePlan(data);
     final actualTodayKey = widget.scheduleService.getActualTodayThaiKey();
     final isToday = selectedDay == actualTodayKey;
     final status = widget.scheduleService.getCurrentStatus(actualTodayKey ?? 'จันทร์');
@@ -256,181 +334,236 @@ class _HomeScreenState extends State<HomeScreen> {
     final isSimulated = widget.scheduleService.simulatedHour != null;
     final actualTodayKey = widget.scheduleService.getActualTodayThaiKey();
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
-      children: [
-        // 1. Day Selection Tabs (Pastel Colors matching DESIGN.md)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: data!.dayOrder.map((dayKey) {
-              final isSelected = selectedDay == dayKey;
-              final isActualToday = dayKey == actualTodayKey;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2.5),
-                  child: _buildDayTab(dayKey, isSelected, isActualToday),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        // 2. Time Simulator Panel (if toggled)
-        if (showSimulator)
+    return RefreshIndicator(
+      color: const Color(0xFF4F46E5),
+      onRefresh: _onManualRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        children: [
+          // 1. Day Selection Tabs (Pastel Colors matching DESIGN.md)
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: data!.dayOrder.map((dayKey) {
+                final isSelected = selectedDay == dayKey;
+                final isActualToday = dayKey == actualTodayKey;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.5),
+                    child: _buildDayTab(dayKey, isSelected, isActualToday),
+                  ),
+                );
+              }).toList(),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+
+          // 2. Time Simulator Panel (if toggled)
+          if (showSimulator)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('⚡ จำลองเวลา: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(
+                            simLabel,
+                            style: TextStyle(
+                              color: isSimulated ? const Color(0xFFB45309) : const Color(0xFF047857),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isSimulated)
+                        InkWell(
+                          onTap: () => _setSimTime(null, null, 'ตามเวลาจริง'),
+                          child: const Text('รีเซ็ตเวลาจริง', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildSimChip('เวลาจริง', null, null, !isSimulated),
+                        _buildSimChip('คาบ 1 (08:30)', 8, 30, simLabel == 'คาบ 1 (08:30)'),
+                        _buildSimChip('พักเบรก (10:05)', 10, 5, simLabel == 'พักเบรก (10:05)'),
+                        _buildSimChip('พักเที่ยง (12:00)', 12, 0, simLabel == 'พักเที่ยง (12:00)'),
+                        _buildSimChip('บ่าย (13:30)', 13, 30, simLabel == 'บ่าย (13:30)'),
+                        _buildSimChip('เลิกเรียน (16:30)', 16, 30, simLabel == 'เลิกเรียน (16:30)'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // 3. Live Countdown Status Banner
+          NowNextBanner(
+            currentSubject: status.subjectName,
+            timeRange: status.timeStr,
+            teacher: status.teacher,
+            nextSubject: status.nextSubject,
+            progressPercent: status.progressPercent,
+            remainingSeconds: status.remainingSeconds,
+            isWeekend: status.isWeekend,
+            isBeforeSchool: status.isBeforeSchool,
+            isAfterSchool: status.isAfterSchool,
+            code: status.code,
+            badge: status.badge,
+          ),
+
+          if (_needsExactAlarmPermission && !_dismissedExactAlarmBanner)
+            _buildExactAlarmCard(),
+
+          // 4. Timeline Header with Dedicated Plan Selector Chip
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Text('⚡ จำลองเวลา: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        Text(
-                          simLabel,
-                          style: TextStyle(
-                            color: isSimulated ? const Color(0xFFB45309) : const Color(0xFF047857),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                    Text(
+                      'วัน$selectedDay • Timeline',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                    ),
+                    if (isToday) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: const Text(
+                          'วันนี้',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
+                // Dedicated Plan Selector Button (ONLY here, removed from top-right)
+                InkWell(
+                  onTap: _openPlanSelector,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
                         ),
                       ],
                     ),
-                    if (isSimulated)
-                      InkWell(
-                        onTap: () => _setSimTime(null, null, 'ตามเวลาจริง'),
-                        child: const Text('รีเซ็ตเวลาจริง', style: TextStyle(fontSize: 11, color: Colors.blue, fontWeight: FontWeight.bold)),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildSimChip('เวลาจริง', null, null, !isSimulated),
-                      _buildSimChip('คาบ 1 (08:30)', 8, 30, simLabel == 'คาบ 1 (08:30)'),
-                      _buildSimChip('พักเบรก (10:05)', 10, 5, simLabel == 'พักเบรก (10:05)'),
-                      _buildSimChip('พักเที่ยง (12:00)', 12, 0, simLabel == 'พักเที่ยง (12:00)'),
-                      _buildSimChip('บ่าย (13:30)', 13, 30, simLabel == 'บ่าย (13:30)'),
-                      _buildSimChip('เลิกเรียน (16:30)', 16, 30, simLabel == 'เลิกเรียน (16:30)'),
-                    ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.notifications_active_outlined, size: 13, color: Color(0xFF4F46E5)),
+                        const SizedBox(width: 4),
+                        Text(
+                          plan?.shortName ?? 'แผน 1 ปกติ',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4338CA)),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-        // 3. Live Countdown Status Banner
-        NowNextBanner(
-          currentSubject: status.subjectName,
-          timeRange: status.timeStr,
-          teacher: status.teacher,
-          nextSubject: status.nextSubject,
-          progressPercent: status.progressPercent,
-          remainingSeconds: status.remainingSeconds,
-          isWeekend: status.isWeekend,
-          isBeforeSchool: status.isBeforeSchool,
-          isAfterSchool: status.isAfterSchool,
-          code: status.code,
-        ),
+          // 5. Timeline Cards List
+          ...daySchedule.items.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            String timeStr = '';
+            if (plan != null) {
+              timeStr = widget.scheduleService.getItemTimeRange(item, plan).timeStr;
+            }
 
-        // 4. Timeline Header with Dedicated Plan Selector Chip
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'วัน$selectedDay • Timeline',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                  ),
-                  if (isToday) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFF86EFAC)),
-                      ),
-                      child: const Text(
-                        'วันนี้',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+            final isActive = isToday && idx == status.activePeriodIndex;
 
-              // Dedicated Plan Selector Button (ONLY here, removed from top-right)
-              InkWell(
-                onTap: _openPlanSelector,
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF4F46E5).withValues(alpha: 0.08),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.notifications_active_outlined, size: 13, color: Color(0xFF4F46E5)),
-                      const SizedBox(width: 4),
-                      Text(
-                        plan?.shortName ?? 'แผน 1 ปกติ',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Color(0xFF4338CA)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            return TimelineCard(
+              item: item,
+              timeStr: timeStr,
+              isActive: isActive,
+            );
+          }),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExactAlarmCard() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.alarm_on_outlined, size: 18, color: Color(0xFFB45309)),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'เปิดสิทธิ์ "การปลุกและการเตือน" เพื่อให้วิดเจ็ตนับถอยหลังสดได้แม่นยำ',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+            ),
           ),
-        ),
-
-        // 5. Timeline Cards List
-        ...daySchedule.items.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final item = entry.value;
-          String timeStr = '';
-          if (plan != null) {
-            timeStr = widget.scheduleService.getItemTimeRange(item, plan).timeStr;
-          }
-
-          final isActive = isToday && idx == status.activePeriodIndex;
-
-          return TimelineCard(
-            item: item,
-            timeStr: timeStr,
-            isActive: isActive,
-          );
-        }),
-        const SizedBox(height: 30),
-      ],
+          TextButton(
+            onPressed: WidgetService.openExactAlarmSettings,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              'ตั้งค่า',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF92400E)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            tooltip: 'ปิดแจ้งเตือน',
+            onPressed: () {
+              setState(() {
+                _dismissedExactAlarmBanner = true;
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 

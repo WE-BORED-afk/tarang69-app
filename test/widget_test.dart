@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +9,10 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tarang69/main.dart';
+import 'package:tarang69/models/schedule_model.dart';
 import 'package:tarang69/services/schedule_service.dart';
 import 'package:tarang69/widgets/now_next_banner.dart';
+import 'package:tarang69/widgets/plan_bottom_sheet.dart';
 
 String _cellText(DataCell cell) {
   final child = cell.child;
@@ -150,5 +153,110 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Morning break displays break badge in banner and active marker in timeline',
+      (WidgetTester tester) async {
+    final scheduleService = _createOfflineService(
+      clock: () => DateTime(2026, 11, 9, 10, 5),
+    );
+    await tester.pumpWidget(Tarang69App(scheduleService: scheduleService));
+    await _pumpUntilLoaded(tester);
+
+    expect(find.text('☕ พักเบรก'), findsOneWidget);
+    expect(find.text('คาบเรียนปัจจุบัน'), findsNothing);
+    expect(find.text('ตอนนี้'), findsOneWidget);
+  });
+
+  testWidgets('Before school headline does not append first subject code',
+      (WidgetTester tester) async {
+    final scheduleService = _createOfflineService(
+      clock: () => DateTime(2026, 11, 9, 8, 0),
+    );
+    await tester.pumpWidget(Tarang69App(scheduleService: scheduleService));
+    await _pumpUntilLoaded(tester);
+
+    expect(find.text('ยังไม่เริ่มคาบเรียน'), findsOneWidget);
+    expect(find.text('ยังไม่เริ่มคาบเรียน (ว33103)'), findsNothing);
+  });
+
+  testWidgets('PlanBottomSheet renders without overflow on 320x360 viewport',
+      (WidgetTester tester) async {
+    final raw = jsonDecode(File('assets/data/schedule.json').readAsStringSync()) as Map<String, dynamic>;
+    final parsed = FullScheduleData.fromJson(raw);
+
+    tester.view.physicalSize = const Size(320, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: PlanBottomSheet(
+              plans: parsed.bellPlans,
+              currentPlanId: 'plan1',
+              onPlanSelected: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('แผนที่ 4: กิจกรรมช่วงพักเที่ยง'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Exact alarm permission banner renders on Android when denied and can be dismissed',
+      (WidgetTester tester) async {
+    const channel = MethodChannel('com.example.tarang69/exact_alarm');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'canScheduleExactAlarms') return false;
+      if (call.method == 'openExactAlarmSettings') return true;
+      return null;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final scheduleService = _createOfflineService(
+        clock: () => DateTime(2026, 11, 9, 8, 30),
+      );
+      await tester.pumpWidget(Tarang69App(scheduleService: scheduleService));
+      await _pumpUntilLoaded(tester);
+
+      expect(find.text('ตั้งค่า'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pump();
+
+      expect(find.text('ตั้งค่า'), findsNothing);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('PlanBottomSheet highlights fallback plan1 when cached selectedPlanId is unknown',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      ScheduleService.planKey: 'plan99',
+    });
+    final scheduleService = _createOfflineService(
+      clock: () => DateTime(2026, 11, 9, 8, 30),
+    );
+    await tester.pumpWidget(Tarang69App(scheduleService: scheduleService));
+    await _pumpUntilLoaded(tester);
+
+    await tester.tap(find.text('แผน 1 ปกติ'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
   });
 }

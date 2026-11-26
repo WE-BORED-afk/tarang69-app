@@ -116,13 +116,18 @@ class Tarang69WidgetProvider : HomeWidgetProvider() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val nextLine = WidgetScheduleCalculator.formatNextLine(
+            nextSubject = next,
+            isWeekend = computed?.isWeekend == true,
+            isAfterSchool = computed?.isAfterSchool == true
+        )
+
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_layout).apply {
                 setTextViewText(R.id.widget_subject_name, subject)
-                setViewVisibility(R.id.widget_subject_room, View.GONE)
                 setTextViewText(R.id.widget_subject_time, time)
                 setTextViewText(R.id.widget_status_badge, "• $statusBadgeText")
-                setTextViewText(R.id.widget_next_subject, "คาบถัดไป: $next")
+                setTextViewText(R.id.widget_next_subject, nextLine)
                 setTextViewText(R.id.widget_day_name, day)
 
                 if (liveStatus != null) {

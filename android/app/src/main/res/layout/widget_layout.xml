@@ -28,22 +28,6 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Room badge (Hidden per user request) -->
-        <TextView
-            android:id="@+id/widget_subject_room"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/widget_room_badge"
-            android:paddingHorizontal="6dp"
-            android:paddingVertical="2dp"
-            android:text="📍 ห้องเรียน"
-            android:textSize="10sp"
-            android:textColor="#4338CA"
-            android:textStyle="bold"
-            android:maxLines="1" />
-
         <!-- Countdown / Time Remaining (Highlighted Pill) -->
         <TextView
             android:id="@+id/widget_countdown_badge"

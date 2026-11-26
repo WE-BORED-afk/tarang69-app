@@ -179,6 +179,27 @@ class ScheduleService extends ChangeNotifier {
     );
   }
 
+  BellPlan? resolveActivePlan([FullScheduleData? source]) {
+    final target = source ?? scheduleData;
+    if (target == null || target.bellPlans.isEmpty) return null;
+    return target.bellPlans[selectedPlanId] ??
+        target.bellPlans['plan1'] ??
+        target.bellPlans.values.first;
+  }
+
+  FullScheduleData? _tryParseValidSchedule(String rawJson) {
+    try {
+      final decoded = jsonDecode(rawJson);
+      if (decoded is! Map<String, dynamic>) return null;
+      final parsed = FullScheduleData.fromJson(decoded);
+      if (parsed.schedule.isEmpty || parsed.bellPlans.isEmpty) return null;
+      return parsed;
+    } catch (e) {
+      debugPrint('Error parsing schedule JSON: $e');
+      return null;
+    }
+  }
+
   Future<FullScheduleData> loadSchedule() async {
     SharedPreferences? prefs;
     try {
@@ -188,33 +209,52 @@ class ScheduleService extends ChangeNotifier {
       debugPrint('Error loading SharedPreferences: $e');
     }
 
-    // 1. Cache
+    // 1. Parse cached schedule if valid
+    FullScheduleData? cachedData;
+    String? cachedRaw;
     if (prefs != null) {
       final cachedJson = prefs.getString(cacheKey);
       if (cachedJson != null && cachedJson.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(cachedJson) as Map<String, dynamic>;
-          scheduleData = FullScheduleData.fromJson(decoded);
-          _rawScheduleJson = cachedJson;
-        } catch (e) {
-          debugPrint('Error parsing cached schedule: $e');
+        cachedData = _tryParseValidSchedule(cachedJson);
+        if (cachedData != null) {
+          cachedRaw = cachedJson;
         }
       }
     }
 
-    // 2. Bundled local asset
-    if (scheduleData == null) {
-      try {
-        final assetContent = await rootBundle.loadString('assets/data/schedule.json');
-        final decoded = jsonDecode(assetContent) as Map<String, dynamic>;
-        scheduleData = FullScheduleData.fromJson(decoded);
-        _rawScheduleJson = assetContent;
-      } catch (e) {
-        debugPrint('Error loading asset schedule: $e');
+    // 2. Parse bundled local asset
+    FullScheduleData? assetData;
+    String? assetRaw;
+    try {
+      final assetContent = await rootBundle.loadString('assets/data/schedule.json');
+      assetData = _tryParseValidSchedule(assetContent);
+      if (assetData != null) {
+        assetRaw = assetContent;
       }
+    } catch (e) {
+      debugPrint('Error loading asset schedule: $e');
     }
 
-    // 3. Fallback dummy
+    // 3. Pick whichever valid schedule has the newer updatedAt
+    if (cachedData != null && assetData != null) {
+      final cachedTime = DateTime.tryParse(cachedData.updatedAt);
+      final assetTime = DateTime.tryParse(assetData.updatedAt);
+      if (assetTime != null && (cachedTime == null || assetTime.isAfter(cachedTime))) {
+        scheduleData = assetData;
+        _rawScheduleJson = assetRaw;
+      } else {
+        scheduleData = cachedData;
+        _rawScheduleJson = cachedRaw;
+      }
+    } else if (cachedData != null) {
+      scheduleData = cachedData;
+      _rawScheduleJson = cachedRaw;
+    } else if (assetData != null) {
+      scheduleData = assetData;
+      _rawScheduleJson = assetRaw;
+    }
+
+    // 4. Fallback dummy
     scheduleData ??= FullScheduleData(
       updatedAt: _clock().toIso8601String(),
       dayOrder: ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'],
@@ -230,10 +270,10 @@ class ScheduleService extends ChangeNotifier {
       },
     );
 
-    // 4. Remote update (non-blocking)
+    // 5. Remote update (non-blocking)
     fetchRemoteUpdate();
 
-    // 5. Widget update
+    // 6. Widget update
     try {
       await updateWidget();
     } catch (_) {}
@@ -261,13 +301,15 @@ class ScheduleService extends ChangeNotifier {
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final bodyStr = utf8.decode(response.bodyBytes);
-        final decoded = jsonDecode(bodyStr) as Map<String, dynamic>;
-        final parsed = FullScheduleData.fromJson(decoded);
+        final parsed = _tryParseValidSchedule(bodyStr);
+        if (parsed == null) {
+          return false;
+        }
         scheduleData = parsed;
         _rawScheduleJson = bodyStr;
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(cacheKey, jsonEncode(decoded));
+          await prefs.setString(cacheKey, bodyStr);
         } catch (_) {}
         await updateWidget();
         notifyListeners();
@@ -320,7 +362,7 @@ class ScheduleService extends ChangeNotifier {
     final totalSecs = totalMins * 60 + second;
 
     final daySchedule = scheduleData!.schedule[dayKey];
-    final plan = scheduleData!.bellPlans[selectedPlanId];
+    final plan = resolveActivePlan();
 
     if (daySchedule == null || plan == null || daySchedule.items.isEmpty) {
       return CurrentPeriodStatus(
@@ -364,7 +406,7 @@ class ScheduleService extends ChangeNotifier {
         subjectName: 'ยังไม่เริ่มคาบเรียน',
         room: firstItem.room ?? 'ห้องเรียนประจำ',
         timeStr: 'เริ่ม ${firstTime.timeStr.split(" - ")[0]} น.',
-        teacher: firstItem.teacher ?? '-',
+        teacher: '-',
         badge: '⏰ กำลังจะเริ่ม',
         nextSubject: '$nextName$nextCode',
         laterSubject: later,
@@ -373,7 +415,7 @@ class ScheduleService extends ChangeNotifier {
         remainingSeconds: remSecs > 0 ? remSecs : 0,
         countdownText: '⏱ เริ่มใน $remMins น.',
         isBeforeSchool: true,
-        code: firstItem.code,
+        code: null,
       );
     }
 

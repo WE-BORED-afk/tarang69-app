@@ -1,10 +1,30 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 
 class WidgetService {
   static const String appGroupId = 'group.com.example.tarang69';
   static const String androidWidgetName = 'Tarang69WidgetProvider';
   static const String iOSWidgetName = 'Tarang69Widget';
+  static const MethodChannel _exactAlarmChannel =
+      MethodChannel('com.example.tarang69/exact_alarm');
+
+  static Future<bool> canScheduleExactAlarms() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+    try {
+      final result = await _exactAlarmChannel.invokeMethod<bool>('canScheduleExactAlarms');
+      return result ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static Future<void> openExactAlarmSettings() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await _exactAlarmChannel.invokeMethod<void>('openExactAlarmSettings');
+    } catch (_) {}
+  }
 
   static Future<void> init() async {
     if (kIsWeb) return;

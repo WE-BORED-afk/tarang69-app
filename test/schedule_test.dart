@@ -50,6 +50,8 @@ void main() {
       expect(status.isAfterSchool, isFalse);
       expect(status.remainingSeconds, 1200);
       expect(status.nextSubject, 'ชีวะ (ว33103)');
+      expect(status.code, isNull);
+      expect(status.teacher, '-');
     });
 
     test('during morning break (10:05) shows break status and double period next', () {
@@ -186,5 +188,62 @@ void main() {
     service.setSimulatedTime(12, 30, 'Test Lunch');
     await pumpEventQueue();
     expect(savedWidgetData['simulated_active'], isTrue);
+  });
+
+  test('invalid selectedPlanId falls back to plan1 instead of returning empty data', () {
+    final service = ScheduleService(
+      clock: () => DateTime(2026, 11, 9, 8, 30),
+      httpClient: MockClient((_) async => http.Response('', 404)),
+    )
+      ..scheduleData = parsedData
+      ..selectedPlanId = 'plan99';
+
+    final status = service.getCurrentStatus('จันทร์');
+    expect(status.subjectName, 'ชีวะ');
+    expect(service.resolveActivePlan()?.id, 'plan1');
+  });
+
+  test('fetchRemoteUpdate rejects empty or incomplete schedule payload without overwriting cache', () async {
+    final service = ScheduleService(
+      clock: () => DateTime(2026, 11, 9, 8, 30),
+      httpClient: MockClient((_) async => http.Response('{"schedule":{},"bellPlans":{}}', 200)),
+    )..scheduleData = parsedData;
+
+    final ok = await service.fetchRemoteUpdate();
+    expect(ok, isFalse);
+    expect(service.scheduleData!.schedule['จันทร์']!.items[0].name, 'ชีวะ');
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(ScheduleService.cacheKey), isNull);
+  });
+
+  test('loadSchedule prefers bundled asset when cached updatedAt is older, and keeps newer cache', () async {
+    final olderCache = jsonDecode(jsonEncode(rawScheduleJson)) as Map<String, dynamic>;
+    olderCache['updatedAt'] = '2026-10-01T00:00:00.000Z';
+    olderCache['schedule']['จันทร์']['items'][0]['name'] = 'วิชาแคชเก่า';
+    SharedPreferences.setMockInitialValues({
+      ScheduleService.cacheKey: jsonEncode(olderCache),
+    });
+
+    final olderCacheService = ScheduleService(
+      clock: () => DateTime(2026, 11, 9, 8, 30),
+      httpClient: MockClient((_) async => http.Response('', 404)),
+    );
+    await olderCacheService.loadSchedule();
+    expect(olderCacheService.scheduleData!.schedule['จันทร์']!.items[0].name, 'ชีวะ');
+
+    final newerCache = jsonDecode(jsonEncode(rawScheduleJson)) as Map<String, dynamic>;
+    newerCache['updatedAt'] = '2026-11-10T00:00:00.000Z';
+    newerCache['schedule']['จันทร์']['items'][0]['name'] = 'วิชาแคชใหม่กว่า';
+    SharedPreferences.setMockInitialValues({
+      ScheduleService.cacheKey: jsonEncode(newerCache),
+    });
+
+    final newerCacheService = ScheduleService(
+      clock: () => DateTime(2026, 11, 9, 8, 30),
+      httpClient: MockClient((_) async => http.Response('', 404)),
+    );
+    await newerCacheService.loadSchedule();
+    expect(newerCacheService.scheduleData!.schedule['จันทร์']!.items[0].name, 'วิชาแคชใหม่กว่า');
   });
 }

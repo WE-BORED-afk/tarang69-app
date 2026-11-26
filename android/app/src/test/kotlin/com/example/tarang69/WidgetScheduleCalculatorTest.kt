@@ -149,4 +149,37 @@ class WidgetScheduleCalculatorTest {
         assertNull(WidgetScheduleCalculator.calculate(null, "plan1", 0L, bkkZone))
         assertNull(WidgetScheduleCalculator.calculate("{bad-json", "plan1", 0L, bkkZone))
     }
+
+    @Test
+    fun formatNextLine_avoidsRedundantPrefixOnLastPeriodAfterSchoolAndWeekend() {
+        assertEquals(
+            "คาบถัดไป: ชีวะ (08.20 น.)",
+            WidgetScheduleCalculator.formatNextLine("ชีวะ (08.20 น.)")
+        )
+        assertEquals(
+            "คาบสุดท้ายของวันแล้ว 🎉",
+            WidgetScheduleCalculator.formatNextLine("คาบสุดท้ายของวันแล้ว 🎉")
+        )
+        assertEquals(
+            "พรุ่งนี้เจอกันใหม่นะ!",
+            WidgetScheduleCalculator.formatNextLine("พรุ่งนี้เจอกันใหม่นะ!", isAfterSchool = true)
+        )
+        assertEquals(
+            "วันจันทร์เจอกันใหม่นะ!",
+            WidgetScheduleCalculator.formatNextLine("วันจันทร์เจอกันใหม่นะ!", isWeekend = true)
+        )
+        assertEquals("-", WidgetScheduleCalculator.formatNextLine("-"))
+
+        val json = loadRealScheduleJson()
+        val lastPeriodStatus =
+            WidgetScheduleCalculator.calculate(json, "plan1", at(2026, 11, 9, 15, 30), bkkZone)!!
+        assertEquals(
+            "คาบสุดท้ายของวันแล้ว 🎉",
+            WidgetScheduleCalculator.formatNextLine(
+                lastPeriodStatus.nextSubject,
+                lastPeriodStatus.isWeekend,
+                lastPeriodStatus.isAfterSchool
+            )
+        )
+    }
 }

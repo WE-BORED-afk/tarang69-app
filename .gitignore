@@ -44,3 +44,8 @@ migrate_working_dir/
 
 *.apk
 
+# Android signing secrets
+android/key.properties
+*.jks
+*.keystore
+

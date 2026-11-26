@@ -11,6 +11,7 @@ class NowNextBanner extends StatelessWidget {
   final bool isBeforeSchool;
   final bool isAfterSchool;
   final String? code;
+  final String? badge;
 
   const NowNextBanner({
     super.key,
@@ -24,6 +25,7 @@ class NowNextBanner extends StatelessWidget {
     this.isBeforeSchool = false,
     this.isAfterSchool = false,
     this.code,
+    this.badge,
   });
 
   String _formatCountdown(int totalSecs) {
@@ -158,32 +160,38 @@ class NowNextBanner extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isAfterSchool
-                            ? Icons.stars_rounded
-                            : isBeforeSchool
-                                ? Icons.wb_sunny_rounded
-                                : Icons.radio_button_checked,
-                        size: 14,
-                        color: isAfterSchool ? Colors.amberAccent : Colors.greenAccent,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          isAfterSchool
-                              ? 'เลิกเรียนแล้ว'
-                              : isBeforeSchool
-                                  ? 'เตรียมตัวเข้าเรียน'
-                                  : 'คาบเรียนปัจจุบัน',
+                  child: badge != null && badge!.isNotEmpty
+                      ? Text(
+                          badge!,
                           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isAfterSchool
+                                  ? Icons.stars_rounded
+                                  : isBeforeSchool
+                                      ? Icons.wb_sunny_rounded
+                                      : Icons.radio_button_checked,
+                              size: 14,
+                              color: isAfterSchool ? Colors.amberAccent : Colors.greenAccent,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                isAfterSchool
+                                    ? 'เลิกเรียนแล้ว'
+                                    : isBeforeSchool
+                                        ? 'เตรียมตัวเข้าเรียน'
+                                        : 'คาบเรียนปัจจุบัน',
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(width: 8),

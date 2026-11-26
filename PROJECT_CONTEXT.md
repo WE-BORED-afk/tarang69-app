@@ -51,9 +51,7 @@
 - **ไอคอนถูกต้อง:** แก้ไขไอคอนในหน้าระบบ Widget Picker ให้แสดงเป็นไอคอน 69 ทางการ
 
 ### 3.4 ความปลอดภัยและใบรับรองแอป (Signing & Play Protect)
-- **ผูก Release Keystore ถาวร:** สร้างและผูก `android/app/upload-keystore.jks` เข้ากับ Gradle
-  - Alias: `tarang69`
-  - Store/Key Password: `tarang69key`
+- **ผูก Release Keystore อย่างปลอดภัย:** ใช้ไฟล์ `android/key.properties` (ติด `.gitignore`, ไม่อยู่ใน Git) สำหรับบิลด์ในเครื่อง และใช้ GitHub Actions Secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) สำหรับการบิลด์บน CI เพื่อไม่เปิดเผยรหัสผ่านบนรีโปสาธารณะ
 - **แก้ปัญหา Google Play Protect:** การใช้คีย์ถาวรทำให้ทุกการบิลด์มี Certificate Fingerprint เดียวกัน ป้องกันปัญหา Play Protect แจ้งเตือนจากการสุ่มคีย์ Debug ใหม่ของ GitHub Actions
 
 ---
@@ -111,3 +109,4 @@ tarang69_app/
 - **v1.0.18:** ล็อกขนาดขั้นต่ำของ Android Widget เป็น 3×1 ช่อง (`minResizeWidth="200dp"`, `minResizeHeight="50dp"`) ป้องกันเลย์เอาต์บีบอัดเมื่อย่อขนาด
 - **v1.0.19:** แก้ตรรกะเวลาพัก/ตารางรวม, แยกแถบสถานะให้ยึดวันจริง, รีเฟรช UI หลังซิงก์ตารางจาก GitHub, กันข้อความชื่อครูล้นจอแคบ, เพิ่มชุดเทส Schedule/Widget (`16/16`) และปรับสคริปต์ `deploy_a51.ps1` ค้นหาพอร์ต Wireless ADB อัตโนมัติ
 - **v1.0.20:** ทำ Android Home Screen Widget ให้ทำงานอิสระเมื่อปิดแอป (คำนวณคาบปัจจุบัน/ถัดไป พักเบรก วันหยุด และแผนเวลา `plan1`–`plan4` ฝั่ง Kotlin พร้อม fallback อ่านจาก APK), นับถอยหลังสดด้วย `Chronometer` (พร้อม `TextView` fallback กรณีไม่มีสิทธิ์ Exact Alarm กันเลขติดลบ), ตั้งปลุกเปลี่ยนคาบ/เที่ยงคืนอัตโนมัติ (`AlarmManager`) และรองรับรีเฟรชหลังบูต/เปลี่ยนเวลา/อัปเดตแอป (`BOOT_COMPLETED`, `TIME_SET`, `DATE_CHANGED`, `MY_PACKAGE_REPLACED`)
+- **v1.0.21:** แก้แถบสถานะพักเบรก/ก่อนเข้าเรียน, เพิ่ม `resolveActivePlan` fallback, ตรวจโครงสร้างและเทียบ `updatedAt` ตอนซิงก์, เพิ่ม `WidgetsBindingObserver` สลับวันอัตโนมัติ, ลากลงรีเฟรช, หน้า retry, ไฮไลต์การ์ดพัก, เว้นช่องว่างการ์ดวิชา, กัน overflow แผ่นเลือกแผน, ปรับข้อความวิดเจ็ตไม่ซ้ำคำ, เพิ่มหน้าขอสิทธิ์ Exact Alarm, ย้าย Keystore ไปใช้ GitHub Secrets + `key.properties` และเพิ่มตัวรันเทส Dart/Kotlin บน CI ก่อนปล่อย Release

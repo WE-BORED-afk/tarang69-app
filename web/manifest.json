@@ -1,11 +1,11 @@
 {
-    "name": "tarang69",
-    "short_name": "tarang69",
+    "name": "TARANG69 - ตารางเรียน ม.6/9",
+    "short_name": "TARANG69",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F8FAFC",
+    "theme_color": "#4F46E5",
+    "description": "ตารางเรียนอัจฉริยะ ม.6/9 พร้อมตัวนับถอยหลังเรียลไทม์",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

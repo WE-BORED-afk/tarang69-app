@@ -39,6 +39,17 @@ object WidgetScheduleCalculator {
 
     private val periodRegex = Regex("""(\d+)(?:\s*-\s*(\d+))?""")
 
+    fun formatNextLine(
+        nextSubject: String,
+        isWeekend: Boolean = false,
+        isAfterSchool: Boolean = false
+    ): String {
+        if (isWeekend || isAfterSchool || nextSubject == "-" || nextSubject.startsWith("คาบสุดท้าย")) {
+            return nextSubject
+        }
+        return "คาบถัดไป: $nextSubject"
+    }
+
     fun parsePeriodRange(period: String?): Pair<Int, Int>? {
         val match = periodRegex.find(period ?: "") ?: return null
         val start = match.groupValues[1].toInt()
